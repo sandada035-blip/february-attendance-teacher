@@ -1,98 +1,25 @@
-const API = "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec"; // ដាក់ URL ដែលបានមកពី Deployment
 
-let CURRENT_LANG = "kh";
-
-const I18N = {
-  kh:{present:"វត្តមាន",absent:"អវត្តមាន",permission:"ច្បាប់",mission:"បេសកកម្ម"},
-  en:{present:"Present",absent:"Absent",permission:"Permission",mission:"Mission"}
-};
-
-function setLang(lang){
-  CURRENT_LANG = lang;
-  lbl("present").innerText = I18N[lang].present;
-  lbl("absent").innerText = I18N[lang].absent;
-  lbl("permission").innerText = I18N[lang].permission;
-  lbl("mission").innerText = I18N[lang].mission;
+async function fetchData() {
+    const response = await fetch(WEB_APP_URL + "?action=getData");
+    const data = await response.json();
+    renderSummary(data.summary);
 }
 
-function lbl(k){return document.getElementById("lbl-"+k);}
-
-const FIELDS = [
-  {kh:"កូដគ្រូ",en:"Employee ID"},
-  {kh:"នាមខ្លួន",en:"First Name"},
-  {kh:"នាមត្រកូល",en:"Last Name"},
-  {kh:"ភេទ",en:"Gender"},
-  {kh:"តួនាទី",en:"Position"},
-  {kh:"សរុប",en:"Total Days"},
-  {kh:"អវត្តមាន",en:"Absent"},
-  {kh:"ច្បាប់",en:"Permission"},
-  {kh:"បេសកកម្ម",en:"Mission"}
-];
-
-const sheets = ["Summary",...Array.from({length:30},(_,i)=>`Day${i+2}`)];
-const sheetSelect = document.getElementById("sheetSelect");
-
-sheets.forEach(s=>{
-  const o=document.createElement("option");
-  o.value=o.textContent=s;
-  sheetSelect.appendChild(o);
-});
-
-async function loadData(){
-  const sheet=sheetSelect.value;
-  const date=dateInput.value;
-
-  const res=await fetch(`${API}?sheet=${sheet}`);
-  const json=await res.json();
-
-  let rows=json.rows;
-
-  if(date && sheet!=="Summary" && json.headers.includes("Date")){
-    const [y,m,d]=date.split("-");
-    const f=`${d}/${m}/${y}`;
-    rows=rows.filter(r=>r["Date"]===f);
-  }
-
-  updateSummary(rows);
-  renderTable(rows);
+function renderSummary(summary) {
+    let html = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6">`;
+    // បង្កើត Card ផ្អែកលើទិន្នន័យ Summary
+    summary.slice(1, 4).forEach(row => {
+        html += `
+            <div class="card">
+                <p class="text-sm text-gray-500">${row[4]}</p> <h3 class="text-2xl font-bold">${row[1]} ${row[2]}</h3>
+                <p class="text-indigo-600">វត្តមាន៖ ${row[5]} ថ្ងៃ</p>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    document.getElementById('content').innerHTML = html;
 }
 
-function renderTable(rows){
-  dataTable.innerHTML=`
-    <tr>${FIELDS.map(f=>`<th>${f.kh}<br><small>${f.en}</small></th>`).join("")}</tr>
-  `;
-
-  rows.forEach((r,i)=>{
-    dataTable.innerHTML+=`
-      <tr>
-        ${FIELDS.map((f,j)=>`
-          <td contenteditable
-              onblur="updateCell(${i+2},${j+1},this.innerText)">
-            ${r[f.kh]??""}
-          </td>`).join("")}
-      </tr>`;
-  });
-}
-
-function updateSummary(rows){
-  let p=0,a=0,per=0,m=0;
-  rows.forEach(r=>{
-    p+=+r["សរុប"]||0;
-    a+=+r["អវត្តមាន"]||0;
-    per+=+r["ច្បាប់"]||0;
-    m+=+r["បេសកកម្ម"]||0;
-  });
-  sum("present",p); sum("absent",a); sum("permission",per); sum("mission",m);
-}
-
-function sum(id,val){document.getElementById("sum-"+id).innerText=val;}
-
-async function updateCell(row,col,value){
-  await fetch(API,{
-    method:"POST",
-    body:JSON.stringify({sheet:sheetSelect.value,row,col,value})
-  });
-}
-
-setLang("kh");
-loadData();
+// បន្ថែម Logic សម្រាប់ Filter និង Update ទិន្នន័យ...
+window.onload = fetchData;
