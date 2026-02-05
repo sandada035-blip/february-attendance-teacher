@@ -606,3 +606,90 @@ tbody tr:nth-child(even){background:rgba(2,6,23,.015)}
 @media (max-width: 480px) {
   #main-view table { min-width: 1000px; }
 }
+
+/*************************************
+ * Mobile: Facebook-style Card View
+ *************************************/
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: block !important; }
+
+  .cards {
+    display: grid;
+    gap: 12px;
+  }
+
+  .card-item {
+    background: #fff;
+    border: 1px solid #eef2f7;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 10px 25px rgba(2, 8, 23, 0.06);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .card-name {
+    font-weight: 800;
+    font-size: 16px;
+    line-height: 1.2;
+    color: #0f172a;
+    max-width: 75%;
+  }
+
+  .card-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(0, 71, 186, 0.08);
+    color: #1e40af;
+    white-space: nowrap;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .kv {
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fbfdff;
+  }
+
+  .k {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .v {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    word-break: break-word;
+  }
+
+  /* Admin input inside cards */
+  .kv .edit-input {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+}
+
