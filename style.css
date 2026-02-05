@@ -41,6 +41,40 @@ body {
   cursor: pointer;
 }
 
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
+
+.card span {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.present { border-left: 6px solid #2e7d32; }
+.absent { border-left: 6px solid #c62828; }
+.permission { border-left: 6px solid #f9a825; }
+.mission { border-left: 6px solid #1565c0; }
+
+.lang-toggle {
+  margin-left: auto;
+}
+
+.lang-toggle button {
+  margin-left: 5px;
+}
+
+
 .table-wrap {
   padding: 15px;
   overflow-x: auto;
