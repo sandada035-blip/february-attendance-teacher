@@ -86,18 +86,21 @@ async function apiGetData() {
 async function apiAuth(pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // ✅ DO NOT set application/json (avoid CORS preflight)
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "auth", pass }),
   });
+
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "Invalid Password");
   return true;
 }
 
+
 async function apiUpdate(sheetName, row0, col0, value, pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // ✅
     body: JSON.stringify({
       action: "update",
       sheetName,
@@ -107,10 +110,12 @@ async function apiUpdate(sheetName, row0, col0, value, pass) {
       pass
     }),
   });
+
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "Update failed");
   return true;
 }
+
 
 /* -------------------------
    Main Load
@@ -427,4 +432,3 @@ async function saveEditFromInput(inputEl) {
 
   window.onload = () => loadData(true);
 })();
-
