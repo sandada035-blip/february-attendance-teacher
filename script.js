@@ -1,71 +1,93 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIz2rJ-HxNX2Pe0Tw7_GURp11X_8Jd0C_es_3irLjOPG3iVl-aaur2Lc6gqy-PTdbU/exec"; // ដាក់ URL ដែលបានមកពី Deployment
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIz2rJ-HxNX2Pe0Tw7_GURp11X_8Jd0C_es_3irLjOPG3iVl-aaur2Lc6gqy-PTdbU/exec";
+let cachedData = null;
+let currentTab = 'summary';
 
-let masterData = [];
+async function loadData() {
+    showLoader(true);
+    const icon = document.getElementById('refresh-icon');
+    icon.classList.add('fa-spin');
 
-async function fetchData() {
-    const response = await fetch(WEB_APP_URL + "?action=getData");
-    const result = await response.json();
-    masterData = result.attendance;
-    renderAttendance(masterData);
-    updateStats(masterData);
+    try {
+        const response = await fetch(WEB_APP_URL);
+        cachedData = await response.json();
+        
+        // បំពេញចន្លោះក្នុង Select Day
+        populateDaySelect();
+        
+        if (currentTab === 'summary') {
+            renderSummaryTable();
+        } else {
+            renderDailyTable();
+        }
+    } catch (error) {
+        alert("ការទាញទិន្នន័យមានបញ្ហា! សូមពិនិត្យ Web App URL របស់អ្នក។");
+        console.error(error);
+    } finally {
+        showLoader(false);
+        icon.classList.remove('fa-spin');
+    }
 }
 
-function renderAttendance(data) {
-    const body = document.getElementById('attendanceBody');
-    body.innerHTML = data.map((row, index) => `
-        <tr class="hover:bg-gray-50">
-            <td class="p-4 border-b font-medium">${row.id}</td>
-            <td class="p-4 border-b">${row.name}</td>
-            <td class="p-4 border-b text-sm">${row.position}</td>
-            <td class="p-4 border-b font-mono text-green-600">${row.checkIn || '-'}</td>
-            <td class="p-4 border-b font-mono text-red-600">${row.checkOut || '-'}</td>
-            <td class="p-4 border-b">
-                <span class="px-3 py-1 rounded-full text-xs ${getStatusClass(row.status)}">${row.status || 'វត្តមាន'}</span>
-            </td>
-            <td class="p-4 border-b">
-                <button onclick="openEditModal(${index})" class="text-blue-600 hover:underline">កែប្រែ</button>
-            </td>
-        </tr>
-    `).join('');
+function populateDaySelect() {
+    const select = document.getElementById('day-select');
+    const days = Object.keys(cachedData.daily);
+    select.innerHTML = days.map(day => `<option value="${day}">${day}</option>`).join('');
 }
 
-function filterByName() {
-    const val = document.getElementById('searchName').value.toLowerCase();
-    const filtered = masterData.filter(item => item.name.toLowerCase().includes(val));
-    renderAttendance(filtered);
+function renderSummaryTable() {
+    const data = cachedData.summary;
+    let html = `<table><thead><tr>`;
+    // Headers
+    data[0].forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    // Rows
+    for (let i = 1; i < data.length; i++) {
+        html += `<tr>${data[i].map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+    }
+    html += `</tbody></table>`;
+    document.getElementById('table-wrapper').innerHTML = html;
 }
 
-// មុខងារ Update ទៅកាន់ Google Sheet
-async function updateEntry(sheetName, id, remark) {
-    const loading = true;
-    const resp = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'updateStatus',
-            sheet: sheetName,
-            employeeId: id,
-            status: remark
-        })
-    });
-    alert("ទិន្នន័យត្រូវបានរក្សាទុក!");
-    fetchData(); // ទាញទិន្នន័យថ្មី
+function renderDailyTable() {
+    const selectedDay = document.getElementById('day-select').value;
+    const data = cachedData.daily[selectedDay];
+    if (!data) return;
+
+    let html = `<table><thead><tr>`;
+    // Header Day (យកជួរទី ២ តាមរូបភាពរបស់អ្នក)
+    data[1].forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    
+    for (let i = 2; i < data.length; i++) {
+        html += `<tr>`;
+        data[i].forEach((cell, idx) => {
+            // បើជាក្រឡាទិន្នន័យស្កេន អាចដាក់ពណ៌បាន
+            let style = cell === "0" ? "color: red; font-weight: bold;" : "";
+            html += `<td style="${style}">${cell}</td>`;
+        });
+        html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    document.getElementById('table-wrapper').innerHTML = html;
 }
 
-function renderSummary(summary) {
-    let html = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6">`;
-    // បង្កើត Card ផ្អែកលើទិន្នន័យ Summary
-    summary.slice(1, 4).forEach(row => {
-        html += `
-            <div class="card">
-                <p class="text-sm text-gray-500">${row[4]}</p> <h3 class="text-2xl font-bold">${row[1]} ${row[2]}</h3>
-                <p class="text-indigo-600">វត្តមាន៖ ${row[5]} ថ្ងៃ</p>
-            </div>
-        `;
-    });
-    html += `</div>`;
-    document.getElementById('content').innerHTML = html;
+function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    
+    document.getElementById('view-title').innerText = tab === 'summary' ? 'Summary Dashboard' : 'Daily Attendance';
+    document.getElementById('day-filter-container').className = tab === 'summary' ? 'hidden' : '';
+    
+    if (cachedData) {
+        tab === 'summary' ? renderSummaryTable() : renderDailyTable();
+    }
 }
 
-// បន្ថែម Logic សម្រាប់ Filter និង Update ទិន្នន័យ...
-window.onload = fetchData;
+function showLoader(show) {
+    document.getElementById('loader').className = show ? 'loader-container' : 'hidden';
+    document.getElementById('table-wrapper').className = show ? 'hidden' : 'table-card';
+}
 
+// ចាប់ផ្តើមទាញទិន្នន័យពេលបើក Page
+window.onload = loadData;
