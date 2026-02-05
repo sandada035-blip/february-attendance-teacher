@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attendance Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>📊 Attendance Dashboard</h1>
+  <div class="controls">
+    <select id="sheetSelect"></select>
+    <input type="date" id="dateFilter" />
+    <button onclick="loadData()">Search</button>
+  </div>
+</header>
+
+<section id="summaryCards"></section>
+
+<section class="table-wrapper">
+  <table id="dataTable"></table>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
+
