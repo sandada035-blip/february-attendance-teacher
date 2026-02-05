@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec"; // ដាក់ URL ដែលបានមកពី Deployment
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIz2rJ-HxNX2Pe0Tw7_GURp11X_8Jd0C_es_3irLjOPG3iVl-aaur2Lc6gqy-PTdbU/exec"; // ដាក់ URL ដែលបានមកពី Deployment
 
 let masterData = [];
 
@@ -68,3 +68,4 @@ function renderSummary(summary) {
 
 // បន្ថែម Logic សម្រាប់ Filter និង Update ទិន្នន័យ...
 window.onload = fetchData;
+
