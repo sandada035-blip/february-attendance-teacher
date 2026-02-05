@@ -1,108 +1,71 @@
 body {
-  margin: 0;
-  font-family: "Segoe UI", "Noto Sans Khmer", sans-serif;
-  background: #f4f7fb;
+  font-family: Arial, "Noto Sans Khmer", sans-serif;
+  background:#f4f7fb;
+  margin:0;
 }
 
 .top-bar {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px 25px;
-  background: linear-gradient(135deg, #1e88e5, #42a5f5);
-  color: #fff;
+  background:#2196f3;
+  color:#fff;
+  padding:15px;
+  display:flex;
+  gap:15px;
+  align-items:center;
 }
 
-.logo-box img {
-  width: 60px;
-  height: 60px;
+.logo {
+  width:55px;
 }
 
 .controls {
-  display: flex;
-  gap: 10px;
-  padding: 15px;
-  background: #ffffff;
-  border-bottom: 1px solid #ddd;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  background:#fff;
+  align-items:center;
 }
 
-.controls select,
-.controls input,
-.controls button {
-  padding: 8px 12px;
-  font-size: 14px;
-}
-
-.controls button {
-  background: #1e88e5;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.lang-toggle {
+  margin-left:auto;
 }
 
 .summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 15px;
-  padding: 15px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+  padding:15px;
 }
 
 .card {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
 }
 
-.card span {
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.present { border-left: 6px solid #2e7d32; }
-.absent { border-left: 6px solid #c62828; }
-.permission { border-left: 6px solid #f9a825; }
-.mission { border-left: 6px solid #1565c0; }
-
-.lang-toggle {
-  margin-left: auto;
-}
-
-.lang-toggle button {
-  margin-left: 5px;
-}
-
+.present {border-left:6px solid #2e7d32;}
+.absent {border-left:6px solid #c62828;}
+.permission {border-left:6px solid #f9a825;}
+.mission {border-left:6px solid #1565c0;}
 
 .table-wrap {
-  padding: 15px;
-  overflow-x: auto;
+  padding:15px;
+  overflow-x:auto;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+th, td {
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
 }
 
 th {
-  background: #e3f2fd;
-  padding: 10px;
-  border: 1px solid #ddd;
-  text-align: center;
-}
-
-td {
-  padding: 8px;
-  border: 1px solid #ddd;
-  text-align: center;
-}
-
-td[contenteditable] {
-  background: #fafafa;
-}
-
-td[contenteditable]:focus {
-  outline: 2px solid #42a5f5;
+  background:#e3f2fd;
 }
