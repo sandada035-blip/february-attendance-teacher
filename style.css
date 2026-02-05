@@ -414,3 +414,21 @@ tbody tr:nth-child(even){background:rgba(2,6,23,.015)}
     z-index:40;
   }
 }
+
+
+/* Wider name columns */
+#main-view th:nth-child(3), #main-view td:nth-child(3),
+#main-view th:nth-child(4), #main-view td:nth-child(4) {
+  min-width: 180px;
+}
+
+/* Make some numeric columns narrower */
+#main-view th:nth-child(9),  #main-view td:nth-child(9),
+#main-view th:nth-child(10), #main-view td:nth-child(10),
+#main-view th:nth-child(11), #main-view td:nth-child(11),
+#main-view th:nth-child(12), #main-view td:nth-child(12),
+#main-view th:nth-child(13), #main-view td:nth-child(13),
+#main-view th:nth-child(14), #main-view td:nth-child(14),
+#main-view th:nth-child(15), #main-view td:nth-child(15) {
+  min-width: 90px;
+}
