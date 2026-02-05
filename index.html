@@ -1,74 +1,42 @@
 <!DOCTYPE html>
 <html lang="km">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Attendance Dashboard</title>
-
-  <!-- Mobile friendly -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="top-bar">
-  <div class="logo-box">
-    <img src="logo.png" alt="School Logo">
-  </div>
+  <img src="logo.png" class="logo">
   <div>
     <h1>Attendance Dashboard</h1>
     <p>ប្រព័ន្ធគ្រប់គ្រងវត្តមានគ្រូបង្រៀន</p>
   </div>
 </header>
 
-<main>
+<section class="controls">
+  <select id="sheetSelect"></select>
+  <input type="date" id="dateInput">
+  <button onclick="loadData()">Search</button>
 
-  <!-- Controls -->
-  <section class="controls">
-    <select id="sheetSelect"></select>
+  <div class="lang-toggle">
+    <button onclick="setLang('kh')">ខ្មែរ</button>
+    <button onclick="setLang('en')">EN</button>
+  </div>
+</section>
 
-    <input type="date" id="dateInput">
+<section class="summary">
+  <div class="card present"><h3 id="lbl-present">វត្តមាន</h3><span id="sum-present">0</span></div>
+  <div class="card absent"><h3 id="lbl-absent">អវត្តមាន</h3><span id="sum-absent">0</span></div>
+  <div class="card permission"><h3 id="lbl-permission">ច្បាប់</h3><span id="sum-permission">0</span></div>
+  <div class="card mission"><h3 id="lbl-mission">បេសកកម្ម</h3><span id="sum-mission">0</span></div>
+</section>
 
-    <button onclick="loadData()">Search</button>
-
-    <!-- Language Toggle -->
-    <div class="lang-toggle">
-      <button onclick="setLang('kh')">ខ្មែរ</button>
-      <button onclick="setLang('en')">EN</button>
-    </div>
-  </section>
-
-  <!-- Summary Cards -->
-  <section class="summary">
-    <div class="card present">
-      <h3 id="lbl-present">វត្តមាន</h3>
-      <span id="sum-present">0</span>
-    </div>
-    <div class="card absent">
-      <h3 id="lbl-absent">អវត្តមាន</h3>
-      <span id="sum-absent">0</span>
-    </div>
-    <div class="card permission">
-      <h3 id="lbl-permission">ច្បាប់</h3>
-      <span id="sum-permission">0</span>
-    </div>
-    <div class="card mission">
-      <h3 id="lbl-mission">បេសកកម្ម</h3>
-      <span id="sum-mission">0</span>
-    </div>
-  </section>
-
-  <!-- Table -->
-  <section class="table-wrap">
-    <table id="dataTable"></table>
-  </section>
-
-</main>
-
-<footer style="text-align:center; padding:10px; font-size:13px; color:#666;">
-  © Attendance System | School Dashboard
-</footer>
+<section class="table-wrap">
+  <table id="dataTable"></table>
+</section>
 
 <script src="script.js"></script>
 </body>
