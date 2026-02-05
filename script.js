@@ -5,9 +5,9 @@ const API =
   "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
 
 /**************************************************
- * Khmer → English Mapping
+ * Bilingual Mapping (Khmer → English)
  **************************************************/
-const FIELD_MAP = [
+const FIELDS = [
   { kh: "កូដគ្រូ", en: "Employee ID" },
   { kh: "នាមខ្លួន", en: "First Name" },
   { kh: "នាមត្រកូល", en: "Last Name" },
@@ -19,48 +19,62 @@ const FIELD_MAP = [
   { kh: "បេសកកម្ម", en: "Mission" }
 ];
 
-const KH_HEADERS = FIELD_MAP.map(f => f.kh);
-const EN_HEADERS = FIELD_MAP.map(f => f.en);
+/**************************************************
+ * Sheet selector
+ **************************************************/
+const sheets = ["Summary", ...Array.from({ length: 30 }, (_, i) => `Day${i + 2}`)];
+const sheetSelect = document.getElementById("sheetSelect");
+
+sheets.forEach(s => {
+  const o = document.createElement("option");
+  o.value = s;
+  o.textContent = s;
+  sheetSelect.appendChild(o);
+});
 
 /**************************************************
- * Load data
+ * Load Data
  **************************************************/
 async function loadData() {
-  const sheet = document.getElementById("sheetSelect").value;
+  const sheet = sheetSelect.value;
+  const date = document.getElementById("dateInput").value;
 
   const res = await fetch(`${API}?sheet=${sheet}`);
   const json = await res.json();
 
   if (!json.success) {
-    alert(json.error || "API error");
+    alert("API Error");
     return;
   }
 
-  renderTable(json.rows);
+  let rows = json.rows;
+
+  if (date && json.headers.includes("Date")) {
+    const [y, m, d] = date.split("-");
+    const formatted = `${d}/${m}/${y}`;
+    rows = rows.filter(r => r["Date"] === formatted);
+  }
+
+  renderTable(rows);
 }
 
 /**************************************************
- * Render bilingual table
+ * Render Table
  **************************************************/
 function renderTable(rows) {
   const table = document.getElementById("dataTable");
-  table.innerHTML = "";
-
-  // Header (Khmer + English)
-  table.innerHTML += `
+  table.innerHTML = `
     <tr>
-      ${FIELD_MAP.map(
-        f => `<th>${f.kh}<br><small>${f.en}</small></th>`
-      ).join("")}
+      ${FIELDS.map(f => `<th>${f.kh}<br><small>${f.en}</small></th>`).join("")}
     </tr>
   `;
 
-  rows.forEach((r, rowIndex) => {
+  rows.forEach((r, i) => {
     table.innerHTML += `
       <tr>
-        ${FIELD_MAP.map((f, colIndex) => `
+        ${FIELDS.map((f, j) => `
           <td contenteditable
-              onblur="updateCell(${rowIndex + 2}, ${colIndex + 1}, this.innerText)">
+              onblur="updateCell(${i + 2}, ${j + 1}, this.innerText)">
             ${r[f.kh] ?? ""}
           </td>
         `).join("")}
@@ -70,15 +84,13 @@ function renderTable(rows) {
 }
 
 /**************************************************
- * Update cell
+ * Update Cell
  **************************************************/
 async function updateCell(row, col, value) {
-  const sheet = document.getElementById("sheetSelect").value;
-
   await fetch(API, {
     method: "POST",
     body: JSON.stringify({
-      sheet,
+      sheet: sheetSelect.value,
       row,
       col,
       value
@@ -86,8 +98,5 @@ async function updateCell(row, col, value) {
   });
 }
 
-/**************************************************
- * Init
- **************************************************/
+// Init
 loadData();
-
