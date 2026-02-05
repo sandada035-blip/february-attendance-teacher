@@ -143,10 +143,10 @@ function updateSummary(rows) {
   let present = 0, absent = 0, permission = 0, mission = 0;
 
   rows.forEach(r => {
-    present += Number(r["សរុបថ្ងៃ"] || 0);
-    absent += Number(r["អវត្តមាន"] || 0);
+    present    += Number(r["សរុប"] || 0);
+    absent     += Number(r["អវត្តមាន"] || 0);
     permission += Number(r["ច្បាប់"] || 0);
-    mission += Number(r["បេសកកម្ម"] || 0);
+    mission    += Number(r["បេសកកម្ម"] || 0);
   });
 
   document.getElementById("sum-present").innerText = present;
@@ -154,6 +154,7 @@ function updateSummary(rows) {
   document.getElementById("sum-permission").innerText = permission;
   document.getElementById("sum-mission").innerText = mission;
 }
+
 
 /**************************************************
  * Update Cell
@@ -180,5 +181,6 @@ async function updateCell(row, col, value) {
  **************************************************/
 setLang("kh");
 loadData();
+
 
 
