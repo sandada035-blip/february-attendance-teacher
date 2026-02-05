@@ -1,203 +1,98 @@
-/**************************************************
- * CONFIG
- **************************************************/
-const API =
-  "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
+const API = "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
 
-/**************************************************
- * LANGUAGE (i18n)
- **************************************************/
 let CURRENT_LANG = "kh";
 
 const I18N = {
-  kh: {
-    present: "វត្តមាន",
-    absent: "អវត្តមាន",
-    permission: "ច្បាប់",
-    mission: "បេសកកម្ម"
-  },
-  en: {
-    present: "Present",
-    absent: "Absent",
-    permission: "Permission",
-    mission: "Mission"
-  }
+  kh:{present:"វត្តមាន",absent:"អវត្តមាន",permission:"ច្បាប់",mission:"បេសកកម្ម"},
+  en:{present:"Present",absent:"Absent",permission:"Permission",mission:"Mission"}
 };
 
-function setLang(lang) {
+function setLang(lang){
   CURRENT_LANG = lang;
-
-  document.getElementById("lbl-present").innerText = I18N[lang].present;
-  document.getElementById("lbl-absent").innerText = I18N[lang].absent;
-  document.getElementById("lbl-permission").innerText = I18N[lang].permission;
-  document.getElementById("lbl-mission").innerText = I18N[lang].mission;
-
-  // 🔁 Re-render table headers with current language
-  if (window.__LAST_ROWS__) {
-    renderTable(window.__LAST_ROWS__);
-  }
+  lbl("present").innerText = I18N[lang].present;
+  lbl("absent").innerText = I18N[lang].absent;
+  lbl("permission").innerText = I18N[lang].permission;
+  lbl("mission").innerText = I18N[lang].mission;
 }
 
-/**************************************************
- * Bilingual Fields (Sheet header = Khmer)
- **************************************************/
+function lbl(k){return document.getElementById("lbl-"+k);}
+
 const FIELDS = [
-  { kh: "កូដគ្រូ", en: "Employee ID" },
-  { kh: "នាមខ្លួន", en: "First Name" },
-  { kh: "នាមត្រកូល", en: "Last Name" },
-  { kh: "ភេទ", en: "Gender" },
-  { kh: "តួនាទី", en: "Position" },
-  { kh: "សរុប", en: "Total Days" },
-  { kh: "អវត្តមាន", en: "Absent" },
-  { kh: "ច្បាប់", en: "Permission" },
-  { kh: "បេសកកម្ម", en: "Mission" }
+  {kh:"កូដគ្រូ",en:"Employee ID"},
+  {kh:"នាមខ្លួន",en:"First Name"},
+  {kh:"នាមត្រកូល",en:"Last Name"},
+  {kh:"ភេទ",en:"Gender"},
+  {kh:"តួនាទី",en:"Position"},
+  {kh:"សរុប",en:"Total Days"},
+  {kh:"អវត្តមាន",en:"Absent"},
+  {kh:"ច្បាប់",en:"Permission"},
+  {kh:"បេសកកម្ម",en:"Mission"}
 ];
 
-
-/**************************************************
- * Sheet selector
- **************************************************/
-const sheets = ["Summary", ...Array.from({ length: 30 }, (_, i) => `Day${i + 2}`)];
+const sheets = ["Summary",...Array.from({length:30},(_,i)=>`Day${i+2}`)];
 const sheetSelect = document.getElementById("sheetSelect");
 
-sheets.forEach(s => {
-  const o = document.createElement("option");
-  o.value = s;
-  o.textContent = s;
+sheets.forEach(s=>{
+  const o=document.createElement("option");
+  o.value=o.textContent=s;
   sheetSelect.appendChild(o);
 });
 
-/**************************************************
- * Load Data
- **************************************************/
-async function loadData() {
-  const sheet = sheetSelect.value;
-  const date = document.getElementById("dateInput").value;
+async function loadData(){
+  const sheet=sheetSelect.value;
+  const date=dateInput.value;
 
-  try {
-    const res = await fetch(`${API}?sheet=${sheet}`);
-    const json = await res.json();
+  const res=await fetch(`${API}?sheet=${sheet}`);
+  const json=await res.json();
 
-    if (!json.success) {
-      alert(json.error || "API Error");
-      return;
-    }
+  let rows=json.rows;
 
-    let rows = json.rows;
-
-    // ✅ APPLY DATE FILTER ONLY FOR DAY SHEETS
-    if (
-      date &&
-      sheet !== "Summary" &&
-      json.headers.includes("Date")
-    ) {
-      const [y, m, d] = date.split("-");
-      const formatted = `${d}/${m}/${y}`;
-      rows = rows.filter(r => r["Date"] === formatted);
-    }
-
-    // Cache + render
-    window.__LAST_ROWS__ = rows;
-    updateSummary(rows);
-    renderTable(rows);
-
-  } catch (err) {
-    console.error(err);
-    alert("Network / API failed");
+  if(date && sheet!=="Summary" && json.headers.includes("Date")){
+    const [y,m,d]=date.split("-");
+    const f=`${d}/${m}/${y}`;
+    rows=rows.filter(r=>r["Date"]===f);
   }
+
+  updateSummary(rows);
+  renderTable(rows);
 }
 
-
-
-/**************************************************
- * Render Table
- **************************************************/
-function renderTable(rows) {
-  const table = document.getElementById("dataTable");
-
-  table.innerHTML = `
-    <tr>
-      ${FIELDS.map(f =>
-        CURRENT_LANG === "kh"
-          ? `<th>${f.kh}<br><small>${f.en}</small></th>`
-          : `<th>${f.en}<br><small>${f.kh}</small></th>`
-      ).join("")}
-    </tr>
+function renderTable(rows){
+  dataTable.innerHTML=`
+    <tr>${FIELDS.map(f=>`<th>${f.kh}<br><small>${f.en}</small></th>`).join("")}</tr>
   `;
 
-  rows.forEach((r, i) => {
-    table.innerHTML += `
+  rows.forEach((r,i)=>{
+    dataTable.innerHTML+=`
       <tr>
-        ${FIELDS.map((f, j) => `
+        ${FIELDS.map((f,j)=>`
           <td contenteditable
-              onblur="updateCell(${i + 2}, ${j + 1}, this.innerText)">
-            ${r[f.kh] ?? ""}
-          </td>
-        `).join("")}
-      </tr>
-    `;
+              onblur="updateCell(${i+2},${j+1},this.innerText)">
+            ${r[f.kh]??""}
+          </td>`).join("")}
+      </tr>`;
   });
 }
 
-/**************************************************
- * Summary Calculation
- **************************************************/
-function updateSummary(rows) {
-  let present = 0, absent = 0, permission = 0, mission = 0;
-
-  rows.forEach(r => {
-    present    += Number(r["សរុប"] || 0);
-    absent     += Number(r["អវត្តមាន"] || 0);
-    permission += Number(r["ច្បាប់"] || 0);
-    mission    += Number(r["បេសកកម្ម"] || 0);
+function updateSummary(rows){
+  let p=0,a=0,per=0,m=0;
+  rows.forEach(r=>{
+    p+=+r["សរុប"]||0;
+    a+=+r["អវត្តមាន"]||0;
+    per+=+r["ច្បាប់"]||0;
+    m+=+r["បេសកកម្ម"]||0;
   });
-
-  document.getElementById("sum-present").innerText = present;
-  document.getElementById("sum-absent").innerText = absent;
-  document.getElementById("sum-permission").innerText = permission;
-  document.getElementById("sum-mission").innerText = mission;
+  sum("present",p); sum("absent",a); sum("permission",per); sum("mission",m);
 }
 
+function sum(id,val){document.getElementById("sum-"+id).innerText=val;}
 
-/**************************************************
- * Update Cell
- **************************************************/
-async function updateCell(row, col, value) {
-  try {
-    await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({
-        sheet: sheetSelect.value,
-        row,
-        col,
-        value
-      })
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Failed to save");
-  }
+async function updateCell(row,col,value){
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({sheet:sheetSelect.value,row,col,value})
+  });
 }
 
-sheetSelect.addEventListener("change", () => {
-  const dateInput = document.getElementById("dateInput");
-
-  if (sheetSelect.value === "Summary") {
-    dateInput.value = "";
-    dateInput.disabled = true;
-  } else {
-    dateInput.disabled = false;
-  }
-});
-
-
-/**************************************************
- * Init
- **************************************************/
 setLang("kh");
 loadData();
-
-
-
-
-
