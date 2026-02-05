@@ -23,24 +23,34 @@ function renderTable(rows) {
   const table = document.getElementById("dataTable");
   table.innerHTML = "";
 
-  if (!rows.length) return;
-
-  const headers = Object.keys(rows[0]);
+  // header
   table.innerHTML += `
-    <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+    <tr>
+      ${HEADERS.map(h => `<th>${h}</th>`).join("")}
+    </tr>
   `;
 
-  rows.forEach((r, i) => {
+  rows.forEach((r, rowIndex) => {
     table.innerHTML += `
       <tr>
-        ${headers.map(h =>
-          `<td contenteditable onblur="updateCell(${i+2}, '${h}', this.innerText)">
+        ${HEADERS.map(h => `
+          <td contenteditable
+              onblur="updateCell(${rowIndex + 2}, '${h}', this.innerText)">
             ${r[h] ?? ""}
-          </td>`
-        ).join("")}
-      </tr>`;
+          </td>
+        `).join("")}
+      </tr>
+    `;
   });
 }
+
+
+function filterByDate(rows, selectedDate) {
+  if (!selectedDate) return rows;
+  return rows.filter(r => r["Date"] === selectedDate);
+}
+
+
 
 async function updateCell(row, colName, value) {
   await fetch(API, {
@@ -60,6 +70,7 @@ function getColIndex(name) {
 }
 
 loadData();
+
 
 
 
