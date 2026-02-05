@@ -179,11 +179,24 @@ async function updateCell(row, col, value) {
   }
 }
 
+sheetSelect.addEventListener("change", () => {
+  const dateInput = document.getElementById("dateInput");
+
+  if (sheetSelect.value === "Summary") {
+    dateInput.value = "";
+    dateInput.disabled = true;
+  } else {
+    dateInput.disabled = false;
+  }
+});
+
+
 /**************************************************
  * Init
  **************************************************/
 setLang("kh");
 loadData();
+
 
 
 
