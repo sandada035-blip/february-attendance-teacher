@@ -23,6 +23,31 @@
   <button onclick="loadData()">Search</button>
 </section>
 
+<div class="lang-toggle">
+  <button onclick="setLang('kh')">ខ្មែរ</button>
+  <button onclick="setLang('en')">EN</button>
+</div>
+
+<section class="summary">
+  <div class="card present">
+    <h3 id="lbl-present">វត្តមាន</h3>
+    <span id="sum-present">0</span>
+  </div>
+  <div class="card absent">
+    <h3 id="lbl-absent">អវត្តមាន</h3>
+    <span id="sum-absent">0</span>
+  </div>
+  <div class="card permission">
+    <h3 id="lbl-permission">ច្បាប់</h3>
+    <span id="sum-permission">0</span>
+  </div>
+  <div class="card mission">
+    <h3 id="lbl-mission">បេសកកម្ម</h3>
+    <span id="sum-mission">0</span>
+  </div>
+</section>
+
+
 <section class="table-wrap">
   <table id="dataTable"></table>
 </section>
