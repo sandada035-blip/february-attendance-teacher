@@ -7,6 +7,34 @@ const API =
 /**************************************************
  * Bilingual Mapping (Khmer → English)
  **************************************************/
+
+let CURRENT_LANG = "kh";
+
+const I18N = {
+  kh: {
+    present: "វត្តមាន",
+    absent: "អវត្តមាន",
+    permission: "ច្បាប់",
+    mission: "បេសកកម្ម"
+  },
+  en: {
+    present: "Present",
+    absent: "Absent",
+    permission: "Permission",
+    mission: "Mission"
+  }
+};
+
+function setLang(lang) {
+  CURRENT_LANG = lang;
+  document.getElementById("lbl-present").innerText = I18N[lang].present;
+  document.getElementById("lbl-absent").innerText = I18N[lang].absent;
+  document.getElementById("lbl-permission").innerText = I18N[lang].permission;
+  document.getElementById("lbl-mission").innerText = I18N[lang].mission;
+}
+
+
+
 const FIELDS = [
   { kh: "កូដគ្រូ", en: "Employee ID" },
   { kh: "នាមខ្លួន", en: "First Name" },
@@ -83,6 +111,24 @@ function renderTable(rows) {
   });
 }
 
+function updateSummary(rows) {
+  let present = 0, absent = 0, permission = 0, mission = 0;
+
+  rows.forEach(r => {
+    present += Number(r["សរុបថ្ងៃ"] || 0);
+    absent += Number(r["អវត្តមាន"] || 0);
+    permission += Number(r["ច្បាប់"] || 0);
+    mission += Number(r["បេសកកម្ម"] || 0);
+  });
+
+  document.getElementById("sum-present").innerText = present;
+  document.getElementById("sum-absent").innerText = absent;
+  document.getElementById("sum-permission").innerText = permission;
+  document.getElementById("sum-mission").innerText = mission;
+}
+
+
+
 /**************************************************
  * Update Cell
  **************************************************/
@@ -100,3 +146,4 @@ async function updateCell(row, col, value) {
 
 // Init
 loadData();
+
