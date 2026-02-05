@@ -1,86 +1,52 @@
 <!DOCTYPE html>
-<html lang="km">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Attendance Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-
-<div class="flex-1 p-10 overflow-y-auto">
-    <header class="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm">
-        <div class="flex items-center gap-4">
-            <img src="logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-indigo-500">
-            <div>
-                <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">ប្រព័ន្ធគ្រប់គ្រងវត្តមានបុគ្គលិក</h2>
-                <p class="text-sm text-gray-500">សាលារៀន អន្តរទ្វីប អាមេរិកាំង</p>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-user-check"></i>
+                <span>ATTENDANCE</span>
             </div>
-        </div>
-        <div class="flex gap-2">
-            <input type="date" id="dateFilter" onchange="filterByDate()" class="border p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none">
-            <input type="text" id="searchName" placeholder="ស្វែងរកឈ្មោះ..." onkeyup="filterByName()" class="border p-2 rounded-lg">
-        </div>
-    </header>
-
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="statsContainer">
-        <div class="bg-blue-500 text-white p-6 rounded-2xl shadow-lg">
-            <p class="opacity-80 text-sm">បុគ្គលិកសរុប</p>
-            <h3 id="totalStaff" class="text-3xl font-bold">0</h3>
-        </div>
-        <div class="bg-green-500 text-white p-6 rounded-2xl shadow-lg">
-            <p class="opacity-80 text-sm">មកធ្វើការ</p>
-            <h3 id="totalPresent" class="text-3xl font-bold">0</h3>
-        </div>
-        <div class="bg-red-500 text-white p-6 rounded-2xl shadow-lg">
-            <p class="opacity-80 text-sm">អវត្តមាន</p>
-            <h3 id="totalAbsent" class="text-3xl font-bold">0</h3>
-        </div>
-        <div class="bg-orange-500 text-white p-6 rounded-2xl shadow-lg">
-            <p class="opacity-80 text-sm">ច្បាប់</p>
-            <h3 id="totalLeave" class="text-3xl font-bold">0</h3>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-100 text-gray-700">
-                <tr>
-                    <th class="p-4 border-b">អត្តលេខ</th>
-                    <th class="p-4 border-b">ឈ្មោះ</th>
-                    <th class="p-4 border-b">តួនាទី</th>
-                    <th class="p-4 border-b">ម៉ោងចូល</th>
-                    <th class="p-4 border-b">ម៉ោងចេញ</th>
-                    <th class="p-4 border-b">ស្ថានភាព</th>
-                    <th class="p-4 border-b">សកម្មភាព</th>
-                </tr>
-            </thead>
-            <tbody id="attendanceBody">
-                </tbody>
-        </table>
-    </div>
-</div>
-
-<body class="bg-gray-50">
-    <div class="flex h-screen">
-        <div class="w-64 bg-indigo-900 text-white p-6">
-            <h1 class="text-2xl font-bold mb-10">HR System</h1>
             <nav>
-                <button onclick="showSection('summary')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-700 w-full text-left">Summary</button>
-                <button onclick="showSection('attendance')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-700 w-full text-left">Attendance</button>
+                <div class="nav-item active" onclick="showTab('summary')">
+                    <i class="fas fa-th-large"></i> Summary Report
+                </div>
+                <div class="nav-item" onclick="showTab('daily')">
+                    <i class="fas fa-calendar-alt"></i> Daily Attendance
+                </div>
             </nav>
-        </div>
+        </aside>
 
-        <div class="flex-1 p-10 overflow-y-auto">
-            <header class="flex justify-between items-center mb-8">
-                <h2 id="pageTitle" class="text-3xl font-semibold text-gray-800">Summary Dashboard</h2>
-                <input type="date" id="dateFilter" class="border p-2 rounded-lg shadow-sm">
+        <main class="main-content">
+            <header>
+                <h1 id="view-title">Summary Dashboard</h1>
+                <div class="controls">
+                    <div id="day-filter-container" class="hidden">
+                        <select id="day-select" onchange="renderDailyTable()">
+                            </select>
+                    </div>
+                    <button class="btn-refresh" onclick="loadData()">
+                        <i class="fas fa-sync" id="refresh-icon"></i> Refresh Data
+                    </button>
+                </div>
             </header>
 
-            <div id="content">
-                <div class="animate-pulse flex space-x-4">កំពុងទាញទិន្នន័យ...</div>
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>កំពុងទាញទិន្នន័យ...</p>
             </div>
-        </div>
+
+            <div id="table-wrapper" class="table-card">
+                </div>
+        </main>
     </div>
     <script src="script.js"></script>
 </body>
