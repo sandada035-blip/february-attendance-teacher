@@ -78,10 +78,6 @@ async function loadData() {
     const res = await fetch(`${API}?sheet=${sheet}`);
     const json = await res.json();
 
-    // ✅ ADD THESE
-    console.log("HEADERS FROM SHEET:", json.headers);
-    console.log("FIRST ROW:", json.rows[0]);
-
     if (!json.success) {
       alert(json.error || "API Error");
       return;
@@ -89,12 +85,18 @@ async function loadData() {
 
     let rows = json.rows;
 
-    if (date && json.headers.includes("Date")) {
+    // ✅ APPLY DATE FILTER ONLY FOR DAY SHEETS
+    if (
+      date &&
+      sheet !== "Summary" &&
+      json.headers.includes("Date")
+    ) {
       const [y, m, d] = date.split("-");
       const formatted = `${d}/${m}/${y}`;
       rows = rows.filter(r => r["Date"] === formatted);
     }
 
+    // Cache + render
     window.__LAST_ROWS__ = rows;
     updateSummary(rows);
     renderTable(rows);
@@ -104,6 +106,7 @@ async function loadData() {
     alert("Network / API failed");
   }
 }
+
 
 
 /**************************************************
@@ -181,6 +184,7 @@ async function updateCell(row, col, value) {
  **************************************************/
 setLang("kh");
 loadData();
+
 
 
 
