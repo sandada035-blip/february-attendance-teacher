@@ -1,9 +1,54 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec"; // ដាក់ URL ដែលបានមកពី Deployment
 
+let masterData = [];
+
 async function fetchData() {
     const response = await fetch(WEB_APP_URL + "?action=getData");
-    const data = await response.json();
-    renderSummary(data.summary);
+    const result = await response.json();
+    masterData = result.attendance;
+    renderAttendance(masterData);
+    updateStats(masterData);
+}
+
+function renderAttendance(data) {
+    const body = document.getElementById('attendanceBody');
+    body.innerHTML = data.map((row, index) => `
+        <tr class="hover:bg-gray-50">
+            <td class="p-4 border-b font-medium">${row.id}</td>
+            <td class="p-4 border-b">${row.name}</td>
+            <td class="p-4 border-b text-sm">${row.position}</td>
+            <td class="p-4 border-b font-mono text-green-600">${row.checkIn || '-'}</td>
+            <td class="p-4 border-b font-mono text-red-600">${row.checkOut || '-'}</td>
+            <td class="p-4 border-b">
+                <span class="px-3 py-1 rounded-full text-xs ${getStatusClass(row.status)}">${row.status || 'វត្តមាន'}</span>
+            </td>
+            <td class="p-4 border-b">
+                <button onclick="openEditModal(${index})" class="text-blue-600 hover:underline">កែប្រែ</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterByName() {
+    const val = document.getElementById('searchName').value.toLowerCase();
+    const filtered = masterData.filter(item => item.name.toLowerCase().includes(val));
+    renderAttendance(filtered);
+}
+
+// មុខងារ Update ទៅកាន់ Google Sheet
+async function updateEntry(sheetName, id, remark) {
+    const loading = true;
+    const resp = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'updateStatus',
+            sheet: sheetName,
+            employeeId: id,
+            status: remark
+        })
+    });
+    alert("ទិន្នន័យត្រូវបានរក្សាទុក!");
+    fetchData(); // ទាញទិន្នន័យថ្មី
 }
 
 function renderSummary(summary) {
