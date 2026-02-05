@@ -1,71 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap');
+
 body {
-  font-family: Arial, "Noto Sans Khmer", sans-serif;
-  background:#f4f7fb;
-  margin:0;
-}
-
-.top-bar {
-  background:#2196f3;
-  color:#fff;
-  padding:15px;
-  display:flex;
-  gap:15px;
-  align-items:center;
-}
-
-.logo {
-  width:55px;
-}
-
-.controls {
-  display:flex;
-  gap:10px;
-  padding:10px;
-  background:#fff;
-  align-items:center;
-}
-
-.lang-toggle {
-  margin-left:auto;
-}
-
-.summary {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:15px;
-  padding:15px;
+    font-family: 'Kantumruy Pro', sans-serif;
 }
 
 .card {
-  background:#fff;
-  padding:20px;
-  border-radius:10px;
-  text-align:center;
-  box-shadow:0 4px 12px rgba(0,0,0,.1);
-}
-
-.present {border-left:6px solid #2e7d32;}
-.absent {border-left:6px solid #c62828;}
-.permission {border-left:6px solid #f9a825;}
-.mission {border-left:6px solid #1565c0;}
-
-.table-wrap {
-  padding:15px;
-  overflow-x:auto;
+    @apply bg-white p-6 rounded-xl shadow-md border border-gray-100;
 }
 
 table {
-  width:100%;
-  border-collapse:collapse;
-  background:#fff;
-}
-
-th, td {
-  border:1px solid #ddd;
-  padding:8px;
-  text-align:center;
+    @apply min-w-full divide-y divide-gray-200;
 }
 
 th {
-  background:#e3f2fd;
+    @apply px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
 }
