@@ -4,88 +4,64 @@
 const API =
   "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
 
-const HEADERS = [
-  "Reference ID",
-  "Employee ID",
-  "First Name",
-  "Last Name",
-  "Gender",
-  "Position",
-  "Date",
-  "Timetable",
-  "Check In",
-  "Check Out",
-  "Clock In",
-  "Clock Out",
-  "Total Scan",
-  "Total Forget Scan",
-  "Total Permission",
-  "Total Mission",
-  "Remark"
+/**************************************************
+ * Khmer → English Mapping
+ **************************************************/
+const FIELD_MAP = [
+  { kh: "កូដគ្រូ", en: "Employee ID" },
+  { kh: "នាមខ្លួន", en: "First Name" },
+  { kh: "នាមត្រកូល", en: "Last Name" },
+  { kh: "ភេទ", en: "Gender" },
+  { kh: "តួនាទី", en: "Position" },
+  { kh: "សរុបថ្ងៃ", en: "Total Days" },
+  { kh: "អវត្តមាន", en: "Absent" },
+  { kh: "ច្បាប់", en: "Permission" },
+  { kh: "បេសកកម្ម", en: "Mission" }
 ];
 
-/**************************************************
- * Sheet selector
- **************************************************/
-const sheets = ["Summary", ...Array.from({ length: 30 }, (_, i) => `Day${i + 2}`)];
-const sheetSelect = document.getElementById("sheetSelect");
-const dateInput = document.getElementById("dateInput"); // ⚠️ id ត្រូវមាន
-
-sheets.forEach(s => {
-  const opt = document.createElement("option");
-  opt.value = s;
-  opt.textContent = s;
-  sheetSelect.appendChild(opt);
-});
+const KH_HEADERS = FIELD_MAP.map(f => f.kh);
+const EN_HEADERS = FIELD_MAP.map(f => f.en);
 
 /**************************************************
  * Load data
  **************************************************/
 async function loadData() {
-  try {
-    const sheet = sheetSelect.value;
-    const res = await fetch(`${API}?sheet=${sheet}`);
-    const json = await res.json();
+  const sheet = document.getElementById("sheetSelect").value;
 
-    if (!json.success) {
-      alert(json.error || "API error");
-      return;
-    }
+  const res = await fetch(`${API}?sheet=${sheet}`);
+  const json = await res.json();
 
-    let rows = json.rows;
-
-    // ✅ Apply date filter
-    rows = filterByDate(rows, dateInput?.value);
-
-    renderTable(rows);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load data");
+  if (!json.success) {
+    alert(json.error || "API error");
+    return;
   }
+
+  renderTable(json.rows);
 }
 
 /**************************************************
- * Render table
+ * Render bilingual table
  **************************************************/
 function renderTable(rows) {
   const table = document.getElementById("dataTable");
   table.innerHTML = "";
 
-  // Header
+  // Header (Khmer + English)
   table.innerHTML += `
     <tr>
-      ${HEADERS.map(h => `<th>${h}</th>`).join("")}
+      ${FIELD_MAP.map(
+        f => `<th>${f.kh}<br><small>${f.en}</small></th>`
+      ).join("")}
     </tr>
   `;
 
-  // Rows
   rows.forEach((r, rowIndex) => {
     table.innerHTML += `
       <tr>
-        ${HEADERS.map((h, colIndex) => `
+        ${FIELD_MAP.map((f, colIndex) => `
           <td contenteditable
               onblur="updateCell(${rowIndex + 2}, ${colIndex + 1}, this.innerText)">
-            ${r[h] ?? ""}
+            ${r[f.kh] ?? ""}
           </td>
         `).join("")}
       </tr>
@@ -94,39 +70,23 @@ function renderTable(rows) {
 }
 
 /**************************************************
- * Date filter (fix format)
- **************************************************/
-function filterByDate(rows, selectedDate) {
-  if (!selectedDate) return rows;
-
-  // input: yyyy-mm-dd → dd/mm/yyyy
-  const [y, m, d] = selectedDate.split("-");
-  const sheetDate = `${d}/${m}/${y}`;
-
-  return rows.filter(r => r["Date"] === sheetDate);
-}
-
-/**************************************************
  * Update cell
  **************************************************/
 async function updateCell(row, col, value) {
-  try {
-    await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({
-        sheet: sheetSelect.value,
-        row,
-        col,
-        value
-      })
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update cell");
-  }
+  const sheet = document.getElementById("sheetSelect").value;
+
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      sheet,
+      row,
+      col,
+      value
+    })
+  });
 }
 
-// Init
+/**************************************************
+ * Init
+ **************************************************/
 loadData();
-
-
