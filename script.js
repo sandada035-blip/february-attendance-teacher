@@ -47,11 +47,12 @@ const FIELDS = [
   { kh: "នាមត្រកូល", en: "Last Name" },
   { kh: "ភេទ", en: "Gender" },
   { kh: "តួនាទី", en: "Position" },
-  { kh: "សរុបថ្ងៃ", en: "Total Days" },
+  { kh: "សរុប", en: "Total Days" },
   { kh: "អវត្តមាន", en: "Absent" },
   { kh: "ច្បាប់", en: "Permission" },
   { kh: "បេសកកម្ម", en: "Mission" }
 ];
+
 
 /**************************************************
  * Sheet selector
@@ -179,4 +180,5 @@ async function updateCell(row, col, value) {
  **************************************************/
 setLang("kh");
 loadData();
+
 
