@@ -5,9 +5,8 @@ const API =
   "https://script.google.com/macros/s/AKfycbxQgrd4SLeZvFffCcFwMP_dzWkDn3VjxrZa-8coP6D_VvJQgwjvp87DPUzFdI3tf_7Q/exec";
 
 /**************************************************
- * Bilingual Mapping (Khmer → English)
+ * LANGUAGE (i18n)
  **************************************************/
-
 let CURRENT_LANG = "kh";
 
 const I18N = {
@@ -27,14 +26,21 @@ const I18N = {
 
 function setLang(lang) {
   CURRENT_LANG = lang;
+
   document.getElementById("lbl-present").innerText = I18N[lang].present;
   document.getElementById("lbl-absent").innerText = I18N[lang].absent;
   document.getElementById("lbl-permission").innerText = I18N[lang].permission;
   document.getElementById("lbl-mission").innerText = I18N[lang].mission;
+
+  // 🔁 Re-render table headers with current language
+  if (window.__LAST_ROWS__) {
+    renderTable(window.__LAST_ROWS__);
+  }
 }
 
-
-
+/**************************************************
+ * Bilingual Fields (Sheet header = Khmer)
+ **************************************************/
 const FIELDS = [
   { kh: "កូដគ្រូ", en: "Employee ID" },
   { kh: "នាមខ្លួន", en: "First Name" },
@@ -67,23 +73,32 @@ async function loadData() {
   const sheet = sheetSelect.value;
   const date = document.getElementById("dateInput").value;
 
-  const res = await fetch(`${API}?sheet=${sheet}`);
-  const json = await res.json();
+  try {
+    const res = await fetch(`${API}?sheet=${sheet}`);
+    const json = await res.json();
 
-  if (!json.success) {
-    alert("API Error");
-    return;
+    if (!json.success) {
+      alert(json.error || "API Error");
+      return;
+    }
+
+    let rows = json.rows;
+
+    // 📅 Date filter (only if column exists)
+    if (date && json.headers.includes("Date")) {
+      const [y, m, d] = date.split("-");
+      const formatted = `${d}/${m}/${y}`;
+      rows = rows.filter(r => r["Date"] === formatted);
+    }
+
+    window.__LAST_ROWS__ = rows; // cache
+    updateSummary(rows);
+    renderTable(rows);
+
+  } catch (err) {
+    console.error(err);
+    alert("Network / API failed");
   }
-
-  let rows = json.rows;
-
-  if (date && json.headers.includes("Date")) {
-    const [y, m, d] = date.split("-");
-    const formatted = `${d}/${m}/${y}`;
-    rows = rows.filter(r => r["Date"] === formatted);
-  }
-
-  renderTable(rows);
 }
 
 /**************************************************
@@ -91,9 +106,14 @@ async function loadData() {
  **************************************************/
 function renderTable(rows) {
   const table = document.getElementById("dataTable");
+
   table.innerHTML = `
     <tr>
-      ${FIELDS.map(f => `<th>${f.kh}<br><small>${f.en}</small></th>`).join("")}
+      ${FIELDS.map(f =>
+        CURRENT_LANG === "kh"
+          ? `<th>${f.kh}<br><small>${f.en}</small></th>`
+          : `<th>${f.en}<br><small>${f.kh}</small></th>`
+      ).join("")}
     </tr>
   `;
 
@@ -111,6 +131,9 @@ function renderTable(rows) {
   });
 }
 
+/**************************************************
+ * Summary Calculation
+ **************************************************/
 function updateSummary(rows) {
   let present = 0, absent = 0, permission = 0, mission = 0;
 
@@ -127,23 +150,28 @@ function updateSummary(rows) {
   document.getElementById("sum-mission").innerText = mission;
 }
 
-
-
 /**************************************************
  * Update Cell
  **************************************************/
 async function updateCell(row, col, value) {
-  await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      sheet: sheetSelect.value,
-      row,
-      col,
-      value
-    })
-  });
+  try {
+    await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({
+        sheet: sheetSelect.value,
+        row,
+        col,
+        value
+      })
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save");
+  }
 }
 
-// Init
+/**************************************************
+ * Init
+ **************************************************/
+setLang("kh");
 loadData();
-
