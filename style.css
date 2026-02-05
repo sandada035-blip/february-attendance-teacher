@@ -1,32 +1,48 @@
 body {
-  font-family: "Noto Sans Khmer", "Segoe UI", sans-serif;
-  background: #f4f7fb;
   margin: 0;
+  font-family: "Segoe UI", "Noto Sans Khmer", sans-serif;
+  background: #f4f7fb;
 }
 
-header {
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 25px;
   background: linear-gradient(135deg, #1e88e5, #42a5f5);
   color: #fff;
-  padding: 20px;
+}
+
+.logo-box img {
+  width: 60px;
+  height: 60px;
 }
 
 .controls {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  padding: 15px;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
 }
 
-button {
-  background: #fff;
-  color: #1e88e5;
+.controls select,
+.controls input,
+.controls button {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.controls button {
+  background: #1e88e5;
+  color: white;
   border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.table-wrapper {
-  padding: 20px;
+.table-wrap {
+  padding: 15px;
   overflow-x: auto;
 }
 
@@ -38,11 +54,21 @@ table {
 
 th {
   background: #e3f2fd;
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
 }
 
-th, td {
+td {
   padding: 8px;
   border: 1px solid #ddd;
   text-align: center;
 }
 
+td[contenteditable] {
+  background: #fafafa;
+}
+
+td[contenteditable]:focus {
+  outline: 2px solid #42a5f5;
+}
