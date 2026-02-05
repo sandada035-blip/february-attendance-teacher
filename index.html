@@ -1,53 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <div class="logo">
-                <i class="fas fa-user-check"></i>
-                <span>ATTENDANCE</span>
-            </div>
-            <nav>
-                <div class="nav-item active" onclick="showTab('summary')">
-                    <i class="fas fa-th-large"></i> Summary Report
-                </div>
-                <div class="nav-item" onclick="showTab('daily')">
-                    <i class="fas fa-calendar-alt"></i> Daily Attendance
-                </div>
-            </nav>
-        </aside>
 
-        <main class="main-content">
-            <header>
-                <h1 id="view-title">Summary Dashboard</h1>
-                <div class="controls">
-                    <div id="day-filter-container" class="hidden">
-                        <select id="day-select" onchange="renderDailyTable()">
-                            </select>
-                    </div>
-                    <button class="btn-refresh" onclick="loadData()">
-                        <i class="fas fa-sync" id="refresh-icon"></i> Refresh Data
-                    </button>
-                </div>
-            </header>
-
-            <div id="loader" class="loader-container">
-                <div class="spinner"></div>
-                <p>កំពុងទាញទិន្នន័យ...</p>
-            </div>
-
-            <div id="table-wrapper" class="table-card">
-                </div>
-        </main>
+  <header>
+    <img src="https://i.ibb.co/db4b68/logo.png" class="logo-img" alt="Logo">
+    <h1>ប្រព័ន្ធគ្រប់គ្រងវត្តមានបុគ្គលិក</h1>
+    
+    <div id="admin-status" class="admin-badge" onclick="loginAdmin()">
+      <i class="fas fa-lock"></i> Mode: User (View Only)
     </div>
-    <script src="script.js"></script>
+    
+    <div id="filter-area" class="filter-container" style="display:none;">
+      <label for="day-select">ជ្រើសរើសថ្ងៃ៖</label>
+      <select id="day-select" onchange="renderDaily()"></select>
+    </div>
+  </header>
+
+  <main class="content">
+    <div id="loader" class="loader-wrapper">
+      <div class="spinner"></div>
+      <p>កំពុងទាញទិន្នន័យ...</p>
+    </div>
+
+    <div id="main-view" class="table-container card">
+      </div>
+  </main>
+
+  <nav class="nav-bar">
+    <div class="nav-item active" onclick="showTab('summary')">
+      <i class="fas fa-chart-pie"></i>
+      <span>សង្ខេប</span>
+    </div>
+    <div class="nav-item" onclick="showTab('daily')">
+      <i class="fas fa-calendar-alt"></i>
+      <span>ប្រចាំថ្ងៃ</span>
+    </div>
+    <div class="nav-item" onclick="loadData()">
+      <i class="fas fa-sync-alt" id="refresh-icon"></i>
+      <span>ថ្មី</span>
+    </div>
+  </nav>
+
+  <script src="script.js"></script>
 </body>
 </html>
