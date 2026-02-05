@@ -10,9 +10,14 @@
 <header>
   <h1>📊 Attendance Dashboard</h1>
   <div class="controls">
-    <select id="sheetSelect"></select>
-    <input type="date" id="dateFilter" />
-    <button onclick="loadData()">Search</button>
+<select id="sheetSelect" onchange="loadData()">
+  <option value="Summary">Summary</option>
+  <option value="Day2">Day2</option>
+  <option value="Day3">Day3</option>
+</select>
+
+<table id="dataTable"></table>
+
   </div>
 </header>
 
@@ -25,4 +30,5 @@
 <script src="script.js"></script>
 </body>
 </html>
+
 
