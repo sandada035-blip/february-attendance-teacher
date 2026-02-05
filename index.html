@@ -7,28 +7,26 @@
 </head>
 <body>
 
-<header>
-  <h1>📊 Attendance Dashboard</h1>
-  <div class="controls">
-<select id="sheetSelect" onchange="loadData()">
-  <option value="Summary">Summary</option>
-  <option value="Day2">Day2</option>
-  <option value="Day3">Day3</option>
-</select>
-
-<table id="dataTable"></table>
-
+<header class="top-bar">
+  <div class="logo-box">
+    <img src="logo.png" alt="School Logo">
+  </div>
+  <div>
+    <h1>Attendance Dashboard</h1>
+    <p>ប្រព័ន្ធគ្រប់គ្រងវត្តមានគ្រូបង្រៀន</p>
   </div>
 </header>
 
-<section id="summaryCards"></section>
+<section class="controls">
+  <select id="sheetSelect"></select>
+  <input type="date" id="dateInput">
+  <button onclick="loadData()">Search</button>
+</section>
 
-<section class="table-wrapper">
+<section class="table-wrap">
   <table id="dataTable"></table>
 </section>
 
 <script src="script.js"></script>
 </body>
 </html>
-
-
