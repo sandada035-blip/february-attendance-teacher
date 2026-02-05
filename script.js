@@ -323,6 +323,105 @@ function showTab(tab) {
   render();
 }
 
+function isMobile() {
+  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+}
+
+// find column index by header keywords (flexible)
+function findCol(header, keywords) {
+  const lower = header.map(h => String(h || "").toLowerCase());
+  for (const kw of keywords) {
+    const i = lower.findIndex(h => h.includes(kw));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+function renderDailyCards(sheetName, headerIdx, header, body) {
+  // smart key columns
+  const colRef  = findCol(header, ["reference", "ref"]);
+  const colEmp  = findCol(header, ["employee"]);
+  const colFn   = findCol(header, ["first"]);
+  const colLn   = findCol(header, ["last"]);
+  const colDate = findCol(header, ["date"]);
+  const colTime = findCol(header, ["timetable", "time table", "session"]);
+  const colIn   = findCol(header, ["check in", "checkin"]);
+  const colOut  = findCol(header, ["check out", "checkout"]);
+  const colClkIn  = findCol(header, ["clock in", "clockin"]);
+  const colClkOut = findCol(header, ["clock out", "clockout"]);
+
+  let html = `<div class="cards mobile-only">`;
+
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r] || [];
+    const realRow0 = headerIdx + 1 + r;
+
+    const first = colFn >= 0 ? row[colFn] : "";
+    const last  = colLn >= 0 ? row[colLn] : "";
+    const fullName = `${first || ""} ${last || ""}`.trim() || "(No name)";
+
+    const badge = (colTime >= 0 ? row[colTime] : "") || "Daily";
+    const ref = colRef >= 0 ? row[colRef] : "";
+    const emp = colEmp >= 0 ? row[colEmp] : "";
+
+    html += `
+      <div class="card-item">
+        <div class="card-top">
+          <div class="card-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
+          <div class="card-badge">${escapeHtml(badge)}</div>
+        </div>
+
+        <div class="card-grid">
+          ${cardKV("Reference ID", ref, sheetName, realRow0, colRef)}
+          ${cardKV("Employee ID", emp, sheetName, realRow0, colEmp)}
+          ${cardKV("Date", colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
+          ${cardKV("Check In", colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
+          ${cardKV("Check Out", colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
+          ${cardKV("Clock In", colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
+          ${cardKV("Clock Out", colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function cardKV(label, value, sheetName, row0, col0) {
+  // if col0 not found, still show value (read-only)
+  if (col0 < 0) {
+    return `<div class="kv"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value ?? "")}</div></div>`;
+  }
+
+  if (isAdmin) {
+    return `
+      <div class="kv">
+        <div class="k">${escapeHtml(label)}</div>
+        <input class="edit-input"
+          value="${escapeHtml(value ?? "")}"
+          title="${escapeHtml(value ?? "")}"
+          data-sheet="${escapeHtml(sheetName)}"
+          data-row="${row0}"
+          data-col="${col0}"
+          onkeydown="onEditKeyDown(event,this)"
+          onchange="saveEditFromInput(this)"
+        />
+      </div>
+    `;
+  }
+
+  return `
+    <div class="kv">
+      <div class="k">${escapeHtml(label)}</div>
+      <div class="v" title="${escapeHtml(value ?? "")}">${escapeHtml(value ?? "")}</div>
+    </div>
+  `;
+}
+
+
+
+
 /* -------------------------
    Admin Modal & Auth
 -------------------------- */
@@ -432,3 +531,4 @@ async function saveEditFromInput(inputEl) {
 
   window.onload = () => loadData(true);
 })();
+
