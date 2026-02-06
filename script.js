@@ -1,15 +1,13 @@
 /****************************************************
  * Attendance Pro - Mobile Only (Facebook style cards)
- * - Daily + Summary as feed cards
- * - Search cards
- * - Admin auth + edit/save on cards
+ * + ✅ Print Summary A4 (Portrait) 2 pages
  ****************************************************/
 
 const WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbxIz2rJ-HxNX2Pe0Tw7_GURp11X_8Jd0C_es_3irLjOPG3iVl-aaur2Lc6gqy-PTdbU/exec";
 
 let cachedData = null;
-let currentTab = "daily"; // default daily
+let currentTab = "daily";
 let isAdmin = false;
 
 const STORAGE_KEY_ADMIN = "attendance_admin_pass";
@@ -40,7 +38,6 @@ function showError(msg) {
   setHidden($("error-panel"), false);
 }
 function hideError() { setHidden($("error-panel"), true); }
-
 function showEmpty(show) { setHidden($("empty-state"), !show); }
 
 let toastTimer = null;
@@ -57,10 +54,7 @@ function setAdminUI(on) {
   $("admin-status").textContent = on ? "Mode: Admin" : "Mode: User";
   $("admin-status").style.background = on ? "rgba(230,30,37,.12)" : "";
   $("admin-status").style.color = on ? "#991b1b" : "";
-
-  // show logout button inside modal
   setHidden($("logoutRow"), !on);
-
   if (cachedData) render();
 }
 
@@ -104,6 +98,23 @@ function normalizeTable(data) {
   return { headerIdx, header, body };
 }
 
+function findCol(header, keywords) {
+  const norm = (s) =>
+    String(s || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const lower = header.map(norm);
+
+  for (const kw of keywords) {
+    const k = norm(kw);
+    const i = lower.findIndex(h => h.includes(k));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
 /* -------------------------
    API calls
 -------------------------- */
@@ -132,7 +143,6 @@ async function apiUpdate(sheetName, row0, col0, value, pass) {
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "update", sheetName, row: row0, col: col0, value, pass }),
   });
-
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "Update failed");
   return true;
@@ -147,13 +157,7 @@ async function loadData(force = false) {
   showLoader(true);
 
   try {
-    if (cachedData && !force) {
-      render();
-      return;
-    }
-
     cachedData = await apiGetData();
-
     populateDaySelect();
 
     const hasSummary = Array.isArray(cachedData.summary) && cachedData.summary.length > 0;
@@ -188,7 +192,7 @@ function populateDaySelect() {
   days.forEach(d => daySelect.add(new Option(d, d)));
 
   if (prev && days.includes(prev)) daySelect.value = prev;
-  if (!daySelect.value && days.length) daySelect.value = days[days.length - 1]; // last/day
+  if (!daySelect.value && days.length) daySelect.value = days[days.length - 1];
 }
 
 /* -------------------------
@@ -201,16 +205,12 @@ function showTab(tab) {
     el.classList.toggle("active", el.dataset.tab === tab);
   });
 
-  // title
   $("subTitle").textContent = tab === "daily" ? "វត្តមានប្រចាំថ្ងៃ" : "សង្ខេបវត្តមានរួម";
-
-  // search reset
   clearSearch(false);
   render();
 }
 
 function render() {
-  // day select visible only in daily
   $("day-select").parentElement.style.display = currentTab === "daily" ? "flex" : "none";
   if (currentTab === "daily") renderDaily();
   else renderSummary();
@@ -227,27 +227,8 @@ function scrollToTop() {
 }
 
 /* -------------------------
-   Cards (Facebook style)
+   Cards
 -------------------------- */
-function findCol(header, keywords) {
-  const norm = (s) =>
-    String(s || "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const lower = header.map(norm);
-
-  for (const kw of keywords) {
-    const k = norm(kw);
-    const i = lower.findIndex(h => h.includes(k));
-    if (i >= 0) return i;
-  }
-  return -1;
-}
-
-
-
 function cardKV(label, value, sheetName, row0, col0) {
   if (col0 < 0) {
     return `<div class="kv"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value ?? "")}</div></div>`;
@@ -305,17 +286,17 @@ function renderDaily() {
 
 function buildDailyCards(sheetName, headerIdx, header, body) {
   const colRef   = findCol(header, ["reference", "ref"]);
-  const colEmp   = findCol(header, ["employee", "emp id", "id"]);
-  const colFn    = findCol(header, ["first"]);
-  const colLn    = findCol(header, ["last"]);
-  const colName  = findCol(header, ["name"]);
-  const colDate  = findCol(header, ["date"]);
+  const colEmp   = findCol(header, ["employee", "emp id", "id", "អត្តលេខ"]);
+  const colFn    = findCol(header, ["first", "នាមខ្លួន"]);
+  const colLn    = findCol(header, ["last", "នាមត្រកូល"]);
+  const colName  = findCol(header, ["name", "ឈ្មោះ"]);
+  const colDate  = findCol(header, ["date", "ថ្ងៃ"]);
   const colTime  = findCol(header, ["timetable", "time table", "session", "shift"]);
   const colIn    = findCol(header, ["check in", "checkin"]);
   const colOut   = findCol(header, ["check out", "checkout"]);
   const colClkIn = findCol(header, ["clock in", "clockin"]);
   const colClkOut= findCol(header, ["clock out", "clockout"]);
-  const colRemark= findCol(header, ["remark", "remarks", "note"]);
+  const colRemark= findCol(header, ["remark", "remarks", "note", "កំណត់ចំណាំ"]);
 
   let html = "";
 
@@ -337,14 +318,14 @@ function buildDailyCards(sheetName, headerIdx, header, body) {
         </div>
 
         <div class="card-grid">
-          ${cardKV("Employee ID",  colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
-          ${cardKV("Reference",    colRef >= 0 ? row[colRef] : "", sheetName, realRow0, colRef)}
-          ${cardKV("Date",         colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
-          ${cardKV("Check In",     colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
-          ${cardKV("Check Out",    colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
-          ${cardKV("Clock In",     colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
-          ${cardKV("Clock Out",    colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
-          ${cardKV("Remark",       colRemark >= 0 ? row[colRemark] : "", sheetName, realRow0, colRemark)}
+          ${cardKV("អត្តលេខ",  colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
+          ${cardKV("Reference", colRef >= 0 ? row[colRef] : "", sheetName, realRow0, colRef)}
+          ${cardKV("ថ្ងៃ",       colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
+          ${cardKV("Check In",   colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
+          ${cardKV("Check Out",  colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
+          ${cardKV("Clock In",   colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
+          ${cardKV("Clock Out",  colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
+          ${cardKV("កំណត់ចំណាំ", colRemark >= 0 ? row[colRemark] : "", sheetName, realRow0, colRemark)}
         </div>
       </div>
     `;
@@ -364,14 +345,12 @@ function renderSummary() {
   }
 
   showEmpty(false);
-
-  // Summary as cards too
   $("main-view").innerHTML = buildSummaryCards("Summary", headerIdx, header, body);
   searchCards();
 }
 
+/* ✅ Summary FIX (Khmer headers A..I) */
 function buildSummaryCards(sheetName, headerIdx, header, body) {
-  // ✅ Map columns by your Khmer headers
   const colID     = findCol(header, ["អត្តលេខ", "id"]);
   const colFn     = findCol(header, ["នាមខ្លួន", "first"]);
   const colLn     = findCol(header, ["នាមត្រកូល", "last"]);
@@ -381,12 +360,9 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
   const colAbsent = findCol(header, ["សរុបអវត្តមាន", "absent"]);
   const colLate   = findCol(header, ["សរុបយឺត", "late"]);
 
-  // Column I (optional extra total)
-  const colExtra  = header.length >= 9 ? 8 : -1; // I index = 8 (0-based)
+  const colExtra  = header.length >= 9 ? 8 : -1; // column I index=8
 
-  // ✅ Fallback by position (A..I) if header not found (very robust)
   const pick = (col, fallback) => (col >= 0 ? col : fallback);
-
   const gID     = pick(colID, 0);
   const gFn     = pick(colFn, 1);
   const gLn     = pick(colLn, 2);
@@ -399,7 +375,6 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
   const safeVal = (row, idx) => (idx >= 0 && idx < row.length ? row[idx] : "");
 
   let html = "";
-
   for (let r = 0; r < body.length; r++) {
     const row = body[r] || [];
     const realRow0 = headerIdx + 1 + r;
@@ -408,8 +383,6 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
     const first = safeVal(row, gFn);
     const last  = safeVal(row, gLn);
     const fullName = `${first || ""} ${last || ""}`.trim() || id || "(No name)";
-
-    // Badge can show role (or "Summary")
     const badge = safeVal(row, gRole) || "Summary";
 
     html += `
@@ -422,23 +395,16 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
         <div class="card-grid">
           ${cardKV("អត្តលេខ", safeVal(row, gID), sheetName, realRow0, gID)}
           ${cardKV("ភេទ", safeVal(row, gSex), sheetName, realRow0, gSex)}
-          ${cardKV("សរុបស្កេន", safeVal(row, gTotal), sheetName, realRow0, gTotal)}
-          ${cardKV("សរុបភ្លេចស្កេន", safeVal(row, gAbsent), sheetName, realRow0, gAbsent)}
-          ${cardKV("សរុបច្បាប់", safeVal(row, gLate), sheetName, realRow0, gLate)}
-          ${
-            (colExtra >= 0 && colExtra < header.length)
-              ? cardKV(header[colExtra] || "សរុបបន្ថែម", safeVal(row, colExtra), sheetName, realRow0, colExtra)
-              : ""
-          }
+          ${cardKV("សរុបវត្តមាន", safeVal(row, gTotal), sheetName, realRow0, gTotal)}
+          ${cardKV("សរុបអវត្តមាន", safeVal(row, gAbsent), sheetName, realRow0, gAbsent)}
+          ${cardKV("សរុបយឺត", safeVal(row, gLate), sheetName, realRow0, gLate)}
+          ${colExtra >= 0 ? cardKV(header[colExtra] || "សរុបបន្ថែម", safeVal(row, colExtra), sheetName, realRow0, colExtra) : ""}
         </div>
       </div>
     `;
   }
-
   return html || "";
 }
-
-
 
 /* -------------------------
    Search
@@ -461,35 +427,23 @@ function openAdminLogin() {
   setHidden($("admin-modal"), false);
   setTimeout(() => $("admin-pass").focus(), 50);
 }
-
-function closeAdminLogin() {
-  setHidden($("admin-modal"), true);
-}
+function closeAdminLogin() { setHidden($("admin-modal"), true); }
 
 function showAdminError(msg) {
   const el = $("admin-login-error");
-  if (!msg) {
-    setHidden(el, true);
-    el.textContent = "";
-    return;
-  }
+  if (!msg) { setHidden(el, true); el.textContent = ""; return; }
   el.textContent = msg;
   setHidden(el, false);
 }
 
 async function loginAdmin() {
   const pass = $("admin-pass").value.trim();
-  if (!pass) {
-    showAdminError("សូមបញ្ចូលលេខសម្ងាត់។");
-    return;
-  }
+  if (!pass) { showAdminError("សូមបញ្ចូលលេខសម្ងាត់។"); return; }
 
   try {
     showAdminError("");
     showLoader(true);
-
     await apiAuth(pass);
-
     sessionStorage.setItem(STORAGE_KEY_ADMIN, pass);
     setAdminUI(true);
     closeAdminLogin();
@@ -534,7 +488,6 @@ async function saveEditFromInput(inputEl) {
     inputEl.disabled = true;
     await apiUpdate(sheetName, row0, col0, value, pass);
 
-    // update cachedData locally
     if (sheetName === "Summary") {
       if (cachedData?.summary?.[row0]) cachedData.summary[row0][col0] = value;
     } else {
@@ -548,6 +501,222 @@ async function saveEditFromInput(inputEl) {
   } finally {
     inputEl.disabled = false;
   }
+}
+
+/* =========================================================
+   ✅ PRINT SUMMARY A4 (Portrait) — EXACT 2 Pages
+   - Header + Table page 1
+   - Table continuation + totals + signature page 2
+========================================================= */
+function printSummaryA4() {
+  if (!cachedData?.summary?.length) {
+    showToast("No Summary data");
+    return;
+  }
+
+  const raw = cachedData.summary || [];
+  const { headerIdx, header, body } = normalizeTable(raw);
+  if (!header.length || !body.length) {
+    showToast("Summary empty");
+    return;
+  }
+
+  // Split into exactly 2 pages (half / half)
+  const totalRows = body.length;
+  const mid = Math.ceil(totalRows / 2);
+  const page1 = body.slice(0, mid);
+  const page2 = body.slice(mid);
+
+  // Compute totals: male/female and total attendance sum (col F)
+  const colSex = 3;   // D
+  const colTotalAttend = 5; // F (សរុបវត្តមាន)
+  let male = 0, female = 0, sumAttend = 0;
+
+  for (const r of body) {
+    const sex = String(r[colSex] ?? "").trim().toUpperCase();
+    if (sex === "M") male++;
+    if (sex === "F") female++;
+    const n = Number(String(r[colTotalAttend] ?? "").trim());
+    if (!Number.isNaN(n)) sumAttend += n;
+  }
+
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const yyyy = today.getFullYear();
+
+  const printHtml = buildPrintSummaryHTML({
+    header,
+    page1,
+    page2,
+    male,
+    female,
+    sumAttend,
+    dateStr: `${dd}/${mm}/${yyyy}`,
+  });
+
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("Popup blocked. Please allow popups then try again.");
+    return;
+  }
+  w.document.open();
+  w.document.write(printHtml);
+  w.document.close();
+
+  // Wait images/fonts then print
+  w.onload = () => {
+    w.focus();
+    w.print();
+  };
+}
+
+function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, dateStr }) {
+  const thead = `<tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+
+  const tbodyRows = (rows) =>
+    rows.map(r => `<tr>${header.map((_, i) => `<td>${escapeHtml(r[i] ?? "")}</td>`).join("")}</tr>`).join("");
+
+  // Change these titles if you want EXACT text like your form
+  const title1 = "ព្រះរាជាណាចក្រកម្ពុជា";
+  const title2 = "ជាតិ សាសនា ព្រះមហាក្សត្រ";
+  const reportTitle = "របាយការណ៍សង្ខេបវត្តមានប្រចាំខែ";
+
+  return `
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Print Summary</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hanuman","Inter",sans-serif; color:#000; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  .header {
+    display:flex; align-items:flex-start; justify-content:space-between;
+    margin-bottom: 6mm;
+  }
+  .h-left { display:flex; gap:10mm; align-items:flex-start; }
+  .logo {
+    width: 22mm; height: 22mm; border-radius: 50%;
+    object-fit: cover;
+  }
+  .h-mid { text-align:center; flex:1; }
+  .h-mid .t1 { font-weight:700; font-size:13pt; }
+  .h-mid .t2 { font-weight:700; font-size:12pt; margin-top:1mm; }
+  .h-mid .rt { font-weight:700; font-size:12pt; margin-top:3mm; text-decoration: underline; }
+  .h-right { width: 22mm; } /* balance */
+
+  table { width:100%; border-collapse: collapse; table-layout: fixed; }
+  th, td {
+    border: 1px solid #000;
+    padding: 2.2mm 1.5mm;
+    font-size: 9.5pt;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+  th { font-weight: 700; }
+
+  .footer-box {
+    margin-top: 6mm;
+    width:100%;
+  }
+  .totals {
+    width:100%;
+    border-collapse: collapse;
+    margin-top: 2mm;
+  }
+  .totals td {
+    border: 1px solid #000;
+    padding: 3mm 2mm;
+    font-size: 10pt;
+    font-weight: 700;
+  }
+  .sign {
+    margin-top: 12mm;
+    display:flex;
+    justify-content: space-between;
+    gap: 10mm;
+    font-size: 10pt;
+  }
+  .sign .box {
+    width: 45%;
+    text-align: center;
+  }
+  .line {
+    margin-top: 18mm;
+    border-bottom: 1px dotted #000;
+    height: 1px;
+  }
+  .date { margin-top: 4mm; font-size:10pt; }
+</style>
+</head>
+
+<body>
+  <!-- Page 1 -->
+  <div class="page">
+    <div class="header">
+      <div class="h-left">
+        <img class="logo" src="logo.png" onerror="this.style.display='none'">
+      </div>
+
+      <div class="h-mid">
+        <div class="t1">${escapeHtml(title1)}</div>
+        <div class="t2">${escapeHtml(title2)}</div>
+        <div class="rt">${escapeHtml(reportTitle)}</div>
+      </div>
+
+      <div class="h-right"></div>
+    </div>
+
+    <table>
+      <thead>${thead}</thead>
+      <tbody>${tbodyRows(page1)}</tbody>
+    </table>
+  </div>
+
+  <!-- Page 2 -->
+  <div class="page">
+    <table>
+      <thead>${thead}</thead>
+      <tbody>${tbodyRows(page2)}</tbody>
+    </table>
+
+    <div class="footer-box">
+      <table class="totals">
+        <tr>
+          <td>ស្រី: ${female} នាក់</td>
+          <td>ប្រុស: ${male} នាក់</td>
+          <td>សរុបវត្តមាន: ${sumAttend}</td>
+        </tr>
+      </table>
+
+      <div class="sign">
+        <div class="box">
+          <div>បានឃើញ និង អនុម័ត</div>
+          <div><b>នាយកសាលា</b></div>
+          <div class="line"></div>
+        </div>
+
+        <div class="box">
+          <div class="date">ថ្ងៃទី ${escapeHtml(dateStr)}</div>
+          <div><b>អ្នករៀបចំ</b></div>
+          <div class="line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+`;
 }
 
 /* -------------------------
@@ -577,9 +746,7 @@ async function saveEditFromInput(inputEl) {
     pulling = false;
     const endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : startY;
     const diff = endY - startY;
-    if (diff > 90) {
-      await loadData(true);
-    }
+    if (diff > 90) await loadData(true);
     const pullText = $("pullText");
     if (pullText) pullText.textContent = "Pull down to refresh";
   }, { passive: true });
@@ -591,6 +758,5 @@ async function saveEditFromInput(inputEl) {
 (function boot() {
   const pass = sessionStorage.getItem(STORAGE_KEY_ADMIN);
   setAdminUI(!!pass);
-
   window.onload = () => loadData(true);
 })();
