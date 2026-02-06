@@ -577,10 +577,14 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   const tbodyRows = (rows) =>
     rows.map(r => `<tr>${header.map((_, i) => `<td>${escapeHtml(r[i] ?? "")}</td>`).join("")}</tr>`).join("");
 
-  // Change these titles if you want EXACT text like your form
-  const title1 = "ព្រះរាជាណាចក្រកម្ពុជា";
-  const title2 = "ជាតិ សាសនា ព្រះមហាក្សត្រ";
-  const reportTitle = "របាយការណ៍សង្ខេបវត្តមានប្រចាំខែ";
+  // ✅ Titles (as requested)
+  const kingdom = "ព្រះរាជាណាចក្រកម្ពុជា";
+  const motto = "ជាតិ  សាសនា  ព្រះមហាក្សត្រ";
+  const reportTitle = "របាយការណ៍វត្តមានបុគ្គលិកប្រចាំខែកុម្ភ";
+
+  // ✅ Left school name (2 lines)
+  const schoolLine1 = "សាលាបឋមសិក្សាសម្តេចព្រះរាជអគ្គមហេសី";
+  const schoolLine2 = "នរោត្តមមុនីនាថសីហនុ";
 
   return `
 <!DOCTYPE html>
@@ -590,29 +594,58 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Print Summary</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<!-- ✅ Khmer Moul + Hanuman -->
+<link href="https://fonts.googleapis.com/css2?family=Khmer+Moul&family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
   @page { size: A4 portrait; margin: 12mm; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Hanuman","Inter",sans-serif; color:#000; }
+
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
-  .header {
-    display:flex; align-items:flex-start; justify-content:space-between;
-    margin-bottom: 6mm;
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom: 4mm;
   }
-  .h-left { display:flex; gap:10mm; align-items:flex-start; }
-  .logo {
+
+  .left-meta{
+    width: 40%;
+    font-size: 10.5pt;
+    line-height: 1.35;
+  }
+
+  .left-meta .school{
+    font-weight:700;
+  }
+
+  .center-meta{
+    width: 60%;
+    text-align:center;
+  }
+
+  .moul{
+    font-family: "Khmer Moul", "Hanuman", sans-serif;
+    font-weight: 400;
+    letter-spacing: .2px;
+  }
+
+  .center-meta .kingdom{ font-size: 13pt; }
+  .center-meta .motto{ font-size: 12pt; margin-top: 1mm; }
+  .center-meta .report{
+    font-size: 12pt;
+    margin-top: 3mm;
+    text-decoration: underline;
+  }
+
+  .logo-row{
+    display:flex; justify-content:center; margin: 2mm 0 4mm;
+  }
+  .logo{
     width: 22mm; height: 22mm; border-radius: 50%;
     object-fit: cover;
   }
-  .h-mid { text-align:center; flex:1; }
-  .h-mid .t1 { font-weight:700; font-size:13pt; }
-  .h-mid .t2 { font-weight:700; font-size:12pt; margin-top:1mm; }
-  .h-mid .rt { font-weight:700; font-size:12pt; margin-top:3mm; text-decoration: underline; }
-  .h-right { width: 22mm; } /* balance */
 
   table { width:100%; border-collapse: collapse; table-layout: fixed; }
   th, td {
@@ -625,56 +658,48 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   }
   th { font-weight: 700; }
 
-  .footer-box {
-    margin-top: 6mm;
-    width:100%;
-  }
-  .totals {
-    width:100%;
-    border-collapse: collapse;
-    margin-top: 2mm;
-  }
+  .footer-box { margin-top: 6mm; width:100%; }
+  .totals { width:100%; border-collapse: collapse; margin-top: 2mm; }
   .totals td {
     border: 1px solid #000;
     padding: 3mm 2mm;
     font-size: 10pt;
     font-weight: 700;
+    text-align:center;
   }
-  .sign {
-    margin-top: 12mm;
+
+  .sign{
+    margin-top: 10mm;
     display:flex;
     justify-content: space-between;
     gap: 10mm;
     font-size: 10pt;
   }
-  .sign .box {
-    width: 45%;
-    text-align: center;
-  }
-  .line {
-    margin-top: 18mm;
-    border-bottom: 1px dotted #000;
-    height: 1px;
-  }
+  .sign .box { width: 45%; text-align: center; }
+  .line { margin-top: 18mm; border-bottom: 1px dotted #000; height: 1px; }
   .date { margin-top: 4mm; font-size:10pt; }
+
 </style>
 </head>
 
 <body>
-  <!-- Page 1 -->
+  <!-- ================= Page 1 ================= -->
   <div class="page">
-    <div class="header">
-      <div class="h-left">
-        <img class="logo" src="logo.png" onerror="this.style.display='none'">
+    <div class="topbar">
+      <div class="left-meta">
+        <div class="school">${escapeHtml(schoolLine1)}</div>
+        <div class="school">${escapeHtml(schoolLine2)}</div>
       </div>
 
-      <div class="h-mid">
-        <div class="t1">${escapeHtml(title1)}</div>
-        <div class="t2">${escapeHtml(title2)}</div>
-        <div class="rt">${escapeHtml(reportTitle)}</div>
+      <div class="center-meta">
+        <div class="moul kingdom">${escapeHtml(kingdom)}</div>
+        <div class="moul motto">${escapeHtml(motto)}</div>
+        <div class="moul report">${escapeHtml(reportTitle)}</div>
       </div>
+    </div>
 
-      <div class="h-right"></div>
+    <div class="logo-row">
+      <img class="logo" src="logo.png" onerror="this.style.display='none'">
     </div>
 
     <table>
@@ -683,10 +708,10 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
     </table>
   </div>
 
-  <!-- Page 2 -->
+  <!-- ================= Page 2 ================= -->
   <div class="page">
     <table>
-      <thead>${thead}</thead>
+      <!-- ✅ FIX: remove thead on page 2 to avoid duplicate header -->
       <tbody>${tbodyRows(page2)}</tbody>
     </table>
 
@@ -718,6 +743,7 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 </html>
 `;
 }
+
 
 /* -------------------------
    Pull-to-refresh (simple)
@@ -760,3 +786,4 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   setAdminUI(!!pass);
   window.onload = () => loadData(true);
 })();
+
