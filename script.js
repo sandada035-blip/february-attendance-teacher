@@ -230,13 +230,23 @@ function scrollToTop() {
    Cards (Facebook style)
 -------------------------- */
 function findCol(header, keywords) {
-  const lower = header.map(h => String(h || "").toLowerCase());
+  const norm = (s) =>
+    String(s || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const lower = header.map(norm);
+
   for (const kw of keywords) {
-    const i = lower.findIndex(h => h.includes(kw));
+    const k = norm(kw);
+    const i = lower.findIndex(h => h.includes(k));
     if (i >= 0) return i;
   }
   return -1;
 }
+
+
 
 function cardKV(label, value, sheetName, row0, col0) {
   if (col0 < 0) {
@@ -361,12 +371,32 @@ function renderSummary() {
 }
 
 function buildSummaryCards(sheetName, headerIdx, header, body) {
-  const colName = findCol(header, ["name"]);
-  const colEmp  = findCol(header, ["employee", "emp", "id"]);
-  const colStatus = findCol(header, ["status"]);
-  const colTotal = findCol(header, ["total"]);
-  const colAbsent = findCol(header, ["absent"]);
-  const colLate = findCol(header, ["late"]);
+  // ✅ Map columns by your Khmer headers
+  const colID     = findCol(header, ["អត្តលេខ", "id"]);
+  const colFn     = findCol(header, ["នាមខ្លួន", "first"]);
+  const colLn     = findCol(header, ["នាមត្រកូល", "last"]);
+  const colSex    = findCol(header, ["ភេទ", "sex"]);
+  const colRole   = findCol(header, ["តួនាទី", "role", "position"]);
+  const colTotal  = findCol(header, ["សរុបវត្តមាន", "total"]);
+  const colAbsent = findCol(header, ["សរុបអវត្តមាន", "absent"]);
+  const colLate   = findCol(header, ["សរុបយឺត", "late"]);
+
+  // Column I (optional extra total)
+  const colExtra  = header.length >= 9 ? 8 : -1; // I index = 8 (0-based)
+
+  // ✅ Fallback by position (A..I) if header not found (very robust)
+  const pick = (col, fallback) => (col >= 0 ? col : fallback);
+
+  const gID     = pick(colID, 0);
+  const gFn     = pick(colFn, 1);
+  const gLn     = pick(colLn, 2);
+  const gSex    = pick(colSex, 3);
+  const gRole   = pick(colRole, 4);
+  const gTotal  = pick(colTotal, 5);
+  const gAbsent = pick(colAbsent, 6);
+  const gLate   = pick(colLate, 7);
+
+  const safeVal = (row, idx) => (idx >= 0 && idx < row.length ? row[idx] : "");
 
   let html = "";
 
@@ -374,22 +404,32 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
     const row = body[r] || [];
     const realRow0 = headerIdx + 1 + r;
 
-    const name = colName >= 0 ? row[colName] : (row[0] ?? "(No name)");
-    const badge = colStatus >= 0 ? row[colStatus] : "Summary";
+    const id = safeVal(row, gID);
+    const first = safeVal(row, gFn);
+    const last  = safeVal(row, gLn);
+    const fullName = `${first || ""} ${last || ""}`.trim() || id || "(No name)";
 
-    // Show a few important fields; the rest can be edited in admin (optional)
+    // Badge can show role (or "Summary")
+    const badge = safeVal(row, gRole) || "Summary";
+
     html += `
-      <div class="card-item" data-search="${escapeHtml((String(name) + " " + row.join(" ")).toLowerCase())}">
+      <div class="card-item" data-search="${escapeHtml((fullName + " " + row.join(" ")).toLowerCase())}">
         <div class="card-top">
-          <div class="card-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+          <div class="card-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
           <div class="card-badge">${escapeHtml(badge)}</div>
         </div>
 
         <div class="card-grid">
-          ${cardKV("Employee", colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
-          ${cardKV("Total",    colTotal >= 0 ? row[colTotal] : "", sheetName, realRow0, colTotal)}
-          ${cardKV("Absent",   colAbsent >= 0 ? row[colAbsent] : "", sheetName, realRow0, colAbsent)}
-          ${cardKV("Late",     colLate >= 0 ? row[colLate] : "", sheetName, realRow0, colLate)}
+          ${cardKV("អត្តលេខ", safeVal(row, gID), sheetName, realRow0, gID)}
+          ${cardKV("ភេទ", safeVal(row, gSex), sheetName, realRow0, gSex)}
+          ${cardKV("សរុបស្កេន", safeVal(row, gTotal), sheetName, realRow0, gTotal)}
+          ${cardKV("សរុបភ្លេចស្កេន", safeVal(row, gAbsent), sheetName, realRow0, gAbsent)}
+          ${cardKV("សរុបច្បាប់", safeVal(row, gLate), sheetName, realRow0, gLate)}
+          ${
+            (colExtra >= 0 && colExtra < header.length)
+              ? cardKV(header[colExtra] || "សរុបបន្ថែម", safeVal(row, colExtra), sheetName, realRow0, colExtra)
+              : ""
+          }
         </div>
       </div>
     `;
@@ -397,6 +437,8 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
 
   return html || "";
 }
+
+
 
 /* -------------------------
    Search
