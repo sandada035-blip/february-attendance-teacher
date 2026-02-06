@@ -573,16 +573,14 @@ function printSummaryA4() {
 
 function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, dateStr }) {
   const thead = `<tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
-
   const tbodyRows = (rows) =>
     rows.map(r => `<tr>${header.map((_, i) => `<td>${escapeHtml(r[i] ?? "")}</td>`).join("")}</tr>`).join("");
 
-  // ✅ Titles (as requested)
+  // Texts requested
   const kingdom = "ព្រះរាជាណាចក្រកម្ពុជា";
   const motto = "ជាតិ  សាសនា  ព្រះមហាក្សត្រ";
   const reportTitle = "របាយការណ៍វត្តមានបុគ្គលិកប្រចាំខែកុម្ភ";
 
-  // ✅ Left school name (2 lines)
   const schoolLine1 = "សាលាបឋមសិក្សាសម្តេចព្រះរាជអគ្គមហេសី";
   const schoolLine2 = "នរោត្តមមុនីនាថសីហនុ";
 
@@ -594,7 +592,6 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Print Summary</title>
 
-<!-- ✅ Khmer Moul + Hanuman -->
 <link href="https://fonts.googleapis.com/css2?family=Khmer+Moul&family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
@@ -605,24 +602,47 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
-  .topbar{
-    display:flex; justify-content:space-between; align-items:flex-start;
-    margin-bottom: 4mm;
+  /* ===== Header Layout (attractive) ===== */
+  .header-wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap: 10mm;
+    margin-bottom: 5mm;
   }
 
-  .left-meta{
-    width: 40%;
+  .left-block{
+    width: 38%;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap: 3mm;
+  }
+
+  .logo-box{
+    width: 26mm;
+    height: 26mm;
+    border-radius: 50%;
+    overflow:hidden;
+    border: 1px solid #000;
+  }
+  .logo-box img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .school{
     font-size: 10.5pt;
     line-height: 1.35;
+    font-weight: 700;
   }
 
-  .left-meta .school{
-    font-weight:700;
-  }
-
-  .center-meta{
-    width: 60%;
+  .center-block{
+    width: 62%;
     text-align:center;
+    padding-top: 1mm;
   }
 
   .moul{
@@ -630,34 +650,27 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
     font-weight: 400;
     letter-spacing: .2px;
   }
-
-  .center-meta .kingdom{ font-size: 13pt; }
-  .center-meta .motto{ font-size: 12pt; margin-top: 1mm; }
-  .center-meta .report{
+  .kingdom{ font-size: 13pt; }
+  .motto{ font-size: 12pt; margin-top: 1mm; }
+  .report{
     font-size: 12pt;
     margin-top: 3mm;
     text-decoration: underline;
   }
 
-  .logo-row{
-    display:flex; justify-content:center; margin: 2mm 0 4mm;
-  }
-  .logo{
-    width: 22mm; height: 22mm; border-radius: 50%;
-    object-fit: cover;
-  }
-
+  /* ===== Table ===== */
   table { width:100%; border-collapse: collapse; table-layout: fixed; }
   th, td {
     border: 1px solid #000;
-    padding: 2.2mm 1.5mm;
-    font-size: 9.5pt;
+    padding: 2.1mm 1.4mm;
+    font-size: 9.4pt;
     text-align: center;
     vertical-align: middle;
     word-wrap: break-word;
   }
   th { font-weight: 700; }
 
+  /* ===== Footer ===== */
   .footer-box { margin-top: 6mm; width:100%; }
   .totals { width:100%; border-collapse: collapse; margin-top: 2mm; }
   .totals td {
@@ -685,21 +698,22 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 <body>
   <!-- ================= Page 1 ================= -->
   <div class="page">
-    <div class="topbar">
-      <div class="left-meta">
+    <div class="header-wrap">
+      <!-- ✅ Left: Logo above school name -->
+      <div class="left-block">
+        <div class="logo-box">
+          <img src="logo.png" onerror="this.parentElement.style.display='none'">
+        </div>
         <div class="school">${escapeHtml(schoolLine1)}</div>
         <div class="school">${escapeHtml(schoolLine2)}</div>
       </div>
 
-      <div class="center-meta">
+      <!-- ✅ Center: Kingdom + motto + report title (Khmer Moul) -->
+      <div class="center-block">
         <div class="moul kingdom">${escapeHtml(kingdom)}</div>
         <div class="moul motto">${escapeHtml(motto)}</div>
         <div class="moul report">${escapeHtml(reportTitle)}</div>
       </div>
-    </div>
-
-    <div class="logo-row">
-      <img class="logo" src="logo.png" onerror="this.style.display='none'">
     </div>
 
     <table>
@@ -711,7 +725,7 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   <!-- ================= Page 2 ================= -->
   <div class="page">
     <table>
-      <!-- ✅ FIX: remove thead on page 2 to avoid duplicate header -->
+      <!-- ✅ Keep only body on page 2 to avoid duplicate header -->
       <tbody>${tbodyRows(page2)}</tbody>
     </table>
 
@@ -786,4 +800,5 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   setAdminUI(!!pass);
   window.onload = () => loadData(true);
 })();
+
 
