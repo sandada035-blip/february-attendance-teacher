@@ -574,6 +574,9 @@ function printSummaryA4() {
 function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, dateStr }) {
   const escapeHtml = (text) => String(text).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 
+  // បញ្ចូលទិន្នន័យទំព័រទាំង ២ ចូលគ្នា ប្រសិនបើអ្នកចង់ឱ្យវាបែងចែកស្មើគ្នាដោយស្វ័យប្រវត្តិ
+  // ប៉ុន្តែនៅទីនេះខ្ញុំរៀបចំតាមអ្វីដែលអ្នកបានផ្ដល់ឱ្យក្នុង page1 និង page2
+  
   const thead = `<tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
   const tbodyRows = (rows) =>
     rows.map(r => `<tr>${header.map((_, i) => `<td>${escapeHtml(r[i] ?? "")}</td>`).join("")}</tr>`).join("");
@@ -591,67 +594,91 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 <meta charset="UTF-8" />
 <link href="https://fonts.googleapis.com/css2?family=Khmer+Moul&family=Hanuman:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 portrait; margin: 10mm 15mm; }
+  /* កំណត់ទំហំក្រដាស A4 និងកាត់បន្ថយ Margin ដើម្បីឱ្យដាក់បានច្រើនជួរ */
+  @page { 
+    size: A4 portrait; 
+    margin: 8mm 12mm; 
+  }
+  
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
-  body { margin: 0; font-family: "Hanuman", serif; color: #000; line-height: 1.4; }
+  
+  body { 
+    margin: 0; 
+    font-family: "Hanuman", serif; 
+    color: #000; 
+    line-height: 1.3; 
+  }
 
-  .page { page-break-after: always; position: relative; min-height: 277mm; }
+  /* ការពារកុំឱ្យលើសទំព័រ */
+  .page { 
+    page-break-after: always; 
+    position: relative; 
+    min-height: 280mm; /* ប្រហាក់ប្រហែលកម្ពស់ A4 */
+  }
+  
   .page:last-child { page-break-after: auto; }
 
   /* Header Section */
-  .header-container { display: flex; justify-content: space-between; margin-bottom: 5mm; position: relative; }
+  .header-container { display: flex; justify-content: space-between; margin-bottom: 2mm; }
   
   .left-side { text-align: center; width: 40%; }
-  .logo-placeholder { width: 65px; height: 65px; margin: 0 auto 5px; border-radius: 50%; border: 1px solid #ddd; overflow: hidden; }
-  .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
-  .school-name { font-family: "Hanuman"; font-weight: 700; font-size: 10pt; line-height: 1.2; }
+  .logo-box { width: 60px; height: 60px; margin: 0 auto 5px; }
+  .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+  .school-name { font-weight: 700; font-size: 9pt; }
 
   .right-side { text-align: center; width: 50%; }
-  .moul { font-family: "Khmer Moul", cursive; font-weight: normal; }
-  .kingdom { font-size: 11pt; margin-bottom: 2px; }
+  /* កំណត់ពុម្ពអក្សរ Moul តាមសំណើរបស់អ្នក */
+  .moul { 
+    font-family: "Khmer Moul", cursive; 
+    font-weight: normal; 
+    line-height: 1.6;
+  }
+  .kingdom { font-size: 11pt; }
   .motto { font-size: 10pt; position: relative; }
-  .motto::after { content: ""; display: block; width: 60px; height: 1px; background: #000; margin: 3px auto; }
-
-  /* Title */
-  .report-title { 
-    text-align: center; 
-    width: 100%; 
-    font-family: "Khmer Moul"; 
-    font-size: 13pt; 
-    margin: 15mm 0 8mm; 
-    text-decoration: underline; 
-    text-underline-offset: 5px;
+  .motto::after { 
+    content: ""; 
+    display: block; 
+    width: 60px; 
+    height: 1px; 
+    background: #000; 
+    margin: 2px auto 0; 
   }
 
-  /* Table Style */
+  .report-title { 
+    text-align: center; 
+    font-family: "Khmer Moul"; 
+    font-size: 12pt; 
+    margin: 8mm 0 5mm; 
+    text-decoration: underline; 
+    text-underline-offset: 4px;
+  }
+
+  /* តារាង - កែសម្រួលទំហំអក្សរឱ្យតូចបន្តិចដើម្បីកុំឱ្យរីកទំព័រ */
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   th, td { 
     border: 1px solid #000; 
-    padding: 6px 2px; 
+    padding: 4px 1px; 
     font-size: 8.5pt; 
     text-align: center; 
     overflow: hidden;
-    white-space: nowrap;
   }
   th { background-color: #f2f2f2; font-weight: 700; }
-  
-  /* Column Widths (Adjust based on your 9 columns) */
-  th:nth-child(1) { width: 12%; } /* ID */
-  th:nth-child(2) { width: 15%; } /* First Name */
-  th:nth-child(3) { width: 15%; } /* Last Name */
-  th:nth-child(4) { width: 6%; }  /* Sex */
-  th:nth-child(5) { width: 18%; } /* Position */
-  
-  /* Summary Table */
-  .summary-table { margin-top: 0; border-top: none; }
-  .summary-table td { font-weight: 700; font-size: 10pt; padding: 10px; }
 
-  /* Footer / Signature Section */
-  .footer-sig { margin-top: 10mm; display: flex; justify-content: space-between; }
-  .sig-box { width: 40%; text-align: center; font-size: 10pt; }
-  .sig-title { font-weight: 700; margin-bottom: 20mm; font-family: "Khmer Moul"; font-size: 9pt; }
+  /* Summary Table */
+  .summary-table { margin-top: 0; }
+  .summary-table td { font-weight: 700; font-size: 9pt; padding: 6px; }
+
+  /* Footer Section */
+  .footer-sig { 
+    margin-top: 5mm; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start;
+  }
+  .sig-box { width: 45%; text-align: center; font-size: 9.5pt; }
+  .sig-title { font-weight: 700; margin-bottom: 18mm; }
+  .sig-moul { font-family: "Khmer Moul"; font-size: 8.5pt; margin-bottom: 18mm; }
   .sig-name { font-weight: 700; }
-  .date-line { margin-bottom: 5px; font-style: italic; }
 
 </style>
 </head>
@@ -660,8 +687,8 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   <div class="page">
     <div class="header-container">
       <div class="left-side">
-        <div class="logo-placeholder">
-          <img src="logo.png" alt="Logo">
+        <div class="logo-box">
+          <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
         </div>
         <div class="school-name">${escapeHtml(schoolLine1)}<br>${escapeHtml(schoolLine2)}</div>
       </div>
@@ -696,13 +723,12 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
     <div class="footer-sig">
       <div class="sig-box">
         <div>បានឃើញ និង ឯកភាព</div>
-        <div class="sig-title">នាយកសាលា</div>
+        <div class="sig-moul">នាយកសាលា</div>
         <div class="sig-name">..........................................</div>
       </div>
       <div class="sig-box">
-        <div class="date-line">ថ្ងៃទី.......ខែ.......ឆ្នាំ២០២៦</div>
-        <div class="sig-title">អ្នករៀបចំទិន្នន័យ</div>
-        <br><br>
+        <div>ថ្ងៃទី.......ខែ.......ឆ្នាំ២០២៦</div>
+        <div class="sig-moul">អ្នករៀបចំទិន្នន័យ</div>
         <div class="sig-name">ហាម ម៉ាលីដា</div>
       </div>
     </div>
@@ -755,6 +781,7 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   setAdminUI(!!pass);
   window.onload = () => loadData(true);
 })();
+
 
 
 
