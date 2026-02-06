@@ -1,8 +1,8 @@
 /****************************************************
- * Attendance Pro - script.js (Pro Version)
- * - Loads: GET ?action=data
- * - Admin Auth: POST {action:"auth", pass}
- * - Update cell: POST {action:"update", sheetName, row, col, value, pass}
+ * Attendance Pro - script.js (FINAL PRO)
+ * Desktop: Table
+ * Mobile: Facebook-style Cards
+ * Admin: Auth + Edit/Save (Table + Cards)
  ****************************************************/
 
 const WEB_APP_URL =
@@ -15,7 +15,7 @@ let isAdmin = false;
 const STORAGE_KEY_ADMIN = "attendance_admin_pass";
 
 /* -------------------------
-   Helpers (UI)
+   Helpers (DOM/UI)
 -------------------------- */
 function $(id) { return document.getElementById(id); }
 
@@ -33,22 +33,16 @@ function setHidden(el, hidden) {
   el.classList.toggle("hidden", !!hidden);
 }
 
-function showLoader(show) {
-  setHidden($("loader"), !show);
-}
+function showLoader(show) { setHidden($("loader"), !show); }
 
 function showError(msg) {
   $("error-text").textContent = msg || "សូមព្យាយាមម្ដងទៀត។";
   setHidden($("error-panel"), false);
 }
 
-function hideError() {
-  setHidden($("error-panel"), true);
-}
+function hideError() { setHidden($("error-panel"), true); }
 
-function showEmpty(show) {
-  setHidden($("empty-state"), !show);
-}
+function showEmpty(show) { setHidden($("empty-state"), !show); }
 
 let toastTimer = null;
 function showToast(msg) {
@@ -65,15 +59,63 @@ function setAdminUI(on) {
   $("admin-status").style.background = on ? "rgba(230,30,37,.12)" : "";
   $("admin-status").style.color = on ? "#991b1b" : "";
 
-  setHidden($("admin-btn"), on);           // hide login if admin
-  setHidden($("admin-logout-btn"), !on);   // show logout if admin
+  setHidden($("admin-btn"), on);
+  setHidden($("admin-logout-btn"), !on);
 
-  // re-render current view to show inputs
   if (cachedData) render();
 }
 
 /* -------------------------
-   API calls
+   Responsive / Mobile
+-------------------------- */
+function isMobile() {
+  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+}
+
+/* -------------------------
+   Table normalization
+   - Finds best header row within first N rows
+   - Trims extra empty columns
+-------------------------- */
+function normalizeTable(data) {
+  if (!Array.isArray(data) || data.length === 0) {
+    return { headerIdx: 0, header: [], body: [] };
+  }
+
+  const rowsToScan = Math.min(8, data.length);
+  let headerIdx = 0;
+  let bestCount = -1;
+
+  for (let r = 0; r < rowsToScan; r++) {
+    const row = data[r] || [];
+    const count = row.reduce((acc, cell) => acc + (String(cell || "").trim() !== "" ? 1 : 0), 0);
+    if (count > bestCount) {
+      bestCount = count;
+      headerIdx = r;
+    }
+  }
+
+  let last = -1;
+  for (let r = headerIdx; r < rowsToScan; r++) {
+    const row = data[r] || [];
+    for (let c = row.length - 1; c >= 0; c--) {
+      if (String(row[c] || "").trim() !== "") {
+        last = Math.max(last, c);
+        break;
+      }
+    }
+  }
+  if (last < 0) last = 0;
+
+  const cut = last + 1;
+  const header = (data[headerIdx] || []).slice(0, cut);
+  const body = data.slice(headerIdx + 1).map(r => (r || []).slice(0, cut));
+
+  return { headerIdx, header, body };
+}
+
+/* -------------------------
+   API calls (CORS-safe)
 -------------------------- */
 async function apiGetData() {
   const url = `${WEB_APP_URL}?action=data&t=${Date.now()}`;
@@ -86,7 +128,7 @@ async function apiGetData() {
 async function apiAuth(pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
-    // ✅ DO NOT set application/json (avoid CORS preflight)
+    // ✅ avoid CORS preflight
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "auth", pass }),
   });
@@ -96,18 +138,17 @@ async function apiAuth(pass) {
   return true;
 }
 
-
 async function apiUpdate(sheetName, row0, col0, value, pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // ✅
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({
       action: "update",
       sheetName,
       row: row0,
       col: col0,
       value,
-      pass
+      pass,
     }),
   });
 
@@ -115,7 +156,6 @@ async function apiUpdate(sheetName, row0, col0, value, pass) {
   if (!json.ok) throw new Error(json.error || "Update failed");
   return true;
 }
-
 
 /* -------------------------
    Main Load
@@ -126,7 +166,6 @@ async function loadData(force = false) {
   showLoader(true);
 
   try {
-    // if already loaded & not forced, just render
     if (cachedData && !force) {
       render();
       return;
@@ -135,10 +174,8 @@ async function loadData(force = false) {
     const data = await apiGetData();
     cachedData = data;
 
-    // Populate day select once
     populateDaySelect();
 
-    // Detect empty
     const hasSummary = Array.isArray(cachedData.summary) && cachedData.summary.length > 0;
     const hasDaily = cachedData.daily && Object.keys(cachedData.daily).length > 0;
 
@@ -163,13 +200,11 @@ function populateDaySelect() {
   const daySelect = $("day-select");
   if (!daySelect || !cachedData?.daily) return;
 
-  // keep current selection if possible
   const prev = daySelect.value;
-
   daySelect.innerHTML = "";
+
   const days = Object.keys(cachedData.daily);
   days.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
-
   days.forEach(d => daySelect.add(new Option(d, d)));
 
   if (prev && days.includes(prev)) daySelect.value = prev;
@@ -179,7 +214,6 @@ function populateDaySelect() {
    Render (Summary / Daily)
 -------------------------- */
 function render() {
-  // show/hide filter group based on tab
   setHidden($("filter-group"), currentTab !== "daily");
 
   if (currentTab === "summary") renderSummary();
@@ -189,8 +223,10 @@ function render() {
 function renderSummary() {
   $("view-title").textContent = "សង្ខេបវត្តមានរួម";
 
-  const data = cachedData?.summary;
-  if (!Array.isArray(data) || data.length === 0) {
+  const raw = cachedData?.summary || [];
+  const { headerIdx, header, body } = normalizeTable(raw);
+
+  if (!header.length) {
     $("main-view").innerHTML = "";
     showEmpty(true);
     return;
@@ -198,13 +234,17 @@ function renderSummary() {
 
   showEmpty(false);
 
-  const header = data[0] || [];
+  // Summary always show table (cards optional; keep table for now)
+  $("main-view").classList.remove("has-cards");
+
   let html = `<table>
     <thead><tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
     <tbody>`;
 
-  for (let r = 1; r < data.length; r++) {
-    const row = data[r] || [];
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r] || [];
+    const realRow0 = headerIdx + 1 + r;
+
     html += "<tr>";
     for (let c = 0; c < header.length; c++) {
       const cell = row[c] ?? "";
@@ -215,8 +255,8 @@ function renderSummary() {
         html += `<td>
           <input class="edit-input"
             value="${escapeHtml(cell)}"
-            data-sheet="${escapeHtml("Summary")}"
-            data-row="${r}"
+            data-sheet="Summary"
+            data-row="${realRow0}"
             data-col="${c}"
             onkeydown="onEditKeyDown(event,this)"
             onchange="saveEditFromInput(this)"
@@ -246,8 +286,10 @@ function renderDaily() {
   const sheetName = daySelect?.value || Object.keys(cachedData.daily)[0];
   if (daySelect && !daySelect.value && sheetName) daySelect.value = sheetName;
 
-  const data = cachedData.daily[sheetName];
-  if (!Array.isArray(data) || data.length === 0) {
+  const raw = cachedData.daily[sheetName] || [];
+  const { headerIdx, header, body } = normalizeTable(raw);
+
+  if (!header.length) {
     $("main-view").innerHTML = "";
     showEmpty(true);
     return;
@@ -255,13 +297,26 @@ function renderDaily() {
 
   showEmpty(false);
 
-  const header = data[0] || [];
+  // ✅ Mobile: Cards
+  if (isMobile()) {
+    $("main-view").classList.add("has-cards"); // important for CSS hide table
+    $("main-view").innerHTML = renderDailyCards(sheetName, headerIdx, header, body);
+    // apply current search filter on cards too
+    searchTable();
+    return;
+  }
+
+  // ✅ Desktop: Table
+  $("main-view").classList.remove("has-cards");
+
   let html = `<table>
     <thead><tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
     <tbody>`;
 
-  for (let r = 1; r < data.length; r++) {
-    const row = data[r] || [];
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r] || [];
+    const realRow0 = headerIdx + 1 + r;
+
     html += "<tr>";
     for (let c = 0; c < header.length; c++) {
       const cell = row[c] ?? "";
@@ -273,7 +328,7 @@ function renderDaily() {
           <input class="edit-input"
             value="${escapeHtml(cell)}"
             data-sheet="${escapeHtml(sheetName)}"
-            data-row="${r}"
+            data-row="${realRow0}"
             data-col="${c}"
             onkeydown="onEditKeyDown(event,this)"
             onchange="saveEditFromInput(this)"
@@ -291,43 +346,8 @@ function renderDaily() {
 }
 
 /* -------------------------
-   Search
+   Cards rendering (Mobile)
 -------------------------- */
-function searchTable() {
-  const table = document.querySelector("#main-view table");
-  if (!table) return;
-
-  const input = $("searchInput").value.toUpperCase().trim();
-  const rows = table.querySelectorAll("tbody tr");
-
-  rows.forEach(tr => {
-    const text = tr.innerText.toUpperCase();
-    tr.style.display = text.includes(input) ? "" : "none";
-  });
-}
-
-/* -------------------------
-   Tabs (Active states)
--------------------------- */
-function showTab(tab) {
-  currentTab = tab;
-
-  // active class for sidebar + mobile nav
-  document.querySelectorAll(".menu-item").forEach(el => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-  document.querySelectorAll(".m-nav-item").forEach(el => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-
-  render();
-}
-
-function isMobile() {
-  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
-}
-
-// find column index by header keywords (flexible)
 function findCol(header, keywords) {
   const lower = header.map(h => String(h || "").toLowerCase());
   for (const kw of keywords) {
@@ -337,59 +357,7 @@ function findCol(header, keywords) {
   return -1;
 }
 
-function renderDailyCards(sheetName, headerIdx, header, body) {
-  // smart key columns
-  const colRef  = findCol(header, ["reference", "ref"]);
-  const colEmp  = findCol(header, ["employee"]);
-  const colFn   = findCol(header, ["first"]);
-  const colLn   = findCol(header, ["last"]);
-  const colDate = findCol(header, ["date"]);
-  const colTime = findCol(header, ["timetable", "time table", "session"]);
-  const colIn   = findCol(header, ["check in", "checkin"]);
-  const colOut  = findCol(header, ["check out", "checkout"]);
-  const colClkIn  = findCol(header, ["clock in", "clockin"]);
-  const colClkOut = findCol(header, ["clock out", "clockout"]);
-
-  let html = `<div class="cards mobile-only">`;
-
-  for (let r = 0; r < body.length; r++) {
-    const row = body[r] || [];
-    const realRow0 = headerIdx + 1 + r;
-
-    const first = colFn >= 0 ? row[colFn] : "";
-    const last  = colLn >= 0 ? row[colLn] : "";
-    const fullName = `${first || ""} ${last || ""}`.trim() || "(No name)";
-
-    const badge = (colTime >= 0 ? row[colTime] : "") || "Daily";
-    const ref = colRef >= 0 ? row[colRef] : "";
-    const emp = colEmp >= 0 ? row[colEmp] : "";
-
-    html += `
-      <div class="card-item">
-        <div class="card-top">
-          <div class="card-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
-          <div class="card-badge">${escapeHtml(badge)}</div>
-        </div>
-
-        <div class="card-grid">
-          ${cardKV("Reference ID", ref, sheetName, realRow0, colRef)}
-          ${cardKV("Employee ID", emp, sheetName, realRow0, colEmp)}
-          ${cardKV("Date", colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
-          ${cardKV("Check In", colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
-          ${cardKV("Check Out", colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
-          ${cardKV("Clock In", colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
-          ${cardKV("Clock Out", colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
-        </div>
-      </div>
-    `;
-  }
-
-  html += `</div>`;
-  return html;
-}
-
 function cardKV(label, value, sheetName, row0, col0) {
-  // if col0 not found, still show value (read-only)
   if (col0 < 0) {
     return `<div class="kv"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value ?? "")}</div></div>`;
   }
@@ -419,8 +387,97 @@ function cardKV(label, value, sheetName, row0, col0) {
   `;
 }
 
+function renderDailyCards(sheetName, headerIdx, header, body) {
+  const colRef   = findCol(header, ["reference", "ref"]);
+  const colEmp   = findCol(header, ["employee"]);
+  const colFn    = findCol(header, ["first"]);
+  const colLn    = findCol(header, ["last"]);
+  const colDate  = findCol(header, ["date"]);
+  const colTime  = findCol(header, ["timetable", "time table", "session"]);
+  const colIn    = findCol(header, ["check in", "checkin"]);
+  const colOut   = findCol(header, ["check out", "checkout"]);
+  const colClkIn = findCol(header, ["clock in", "clockin"]);
+  const colClkOut= findCol(header, ["clock out", "clockout"]);
 
+  let html = `<div class="cards mobile-only">`;
 
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r] || [];
+    const realRow0 = headerIdx + 1 + r;
+
+    const first = colFn >= 0 ? row[colFn] : "";
+    const last  = colLn >= 0 ? row[colLn] : "";
+    const fullName = `${first || ""} ${last || ""}`.trim()
+      || (colEmp >= 0 ? row[colEmp] : "")
+      || "(No name)";
+
+    const badge = (colTime >= 0 ? row[colTime] : "") || "Daily";
+
+    html += `
+      <div class="card-item" data-search="${escapeHtml((fullName + " " + (row.join(" "))).toLowerCase())}">
+        <div class="card-top">
+          <div class="card-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
+          <div class="card-badge">${escapeHtml(badge)}</div>
+        </div>
+
+        <div class="card-grid">
+          ${cardKV("Reference ID", colRef >= 0 ? row[colRef] : "", sheetName, realRow0, colRef)}
+          ${cardKV("Employee ID",  colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
+          ${cardKV("Date",         colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
+          ${cardKV("Check In",     colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
+          ${cardKV("Check Out",    colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
+          ${cardKV("Clock In",     colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
+          ${cardKV("Clock Out",    colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+/* -------------------------
+   Search (Table + Cards)
+-------------------------- */
+function searchTable() {
+  const q = ($("searchInput")?.value || "").toLowerCase().trim();
+
+  // Table filter
+  const table = document.querySelector("#main-view table");
+  if (table) {
+    const rows = table.querySelectorAll("tbody tr");
+    rows.forEach(tr => {
+      const text = tr.innerText.toLowerCase();
+      tr.style.display = text.includes(q) ? "" : "none";
+    });
+  }
+
+  // Cards filter
+  const cards = document.querySelectorAll("#main-view .card-item");
+  if (cards && cards.length) {
+    cards.forEach(card => {
+      const text = (card.getAttribute("data-search") || "").toLowerCase();
+      card.style.display = text.includes(q) ? "" : "none";
+    });
+  }
+}
+
+/* -------------------------
+   Tabs (Active states)
+-------------------------- */
+function showTab(tab) {
+  currentTab = tab;
+
+  document.querySelectorAll(".menu-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
+  document.querySelectorAll(".m-nav-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
+
+  render();
+}
 
 /* -------------------------
    Admin Modal & Auth
@@ -444,7 +501,7 @@ async function loginAdmin() {
   }
 
   try {
-    showAdminError(""); // clear
+    showAdminError("");
     showLoader(true);
 
     await apiAuth(pass);
@@ -454,7 +511,7 @@ async function loginAdmin() {
     closeAdminLogin();
     showToast("Admin Mode Enabled");
   } catch (e) {
-    showAdminError("លេខសម្ងាត់ខុស!");
+    showAdminError(e.message || "Login failed");
   } finally {
     showLoader(false);
   }
@@ -481,7 +538,6 @@ function logoutAdmin() {
    Save edits
 -------------------------- */
 function onEditKeyDown(e, inputEl) {
-  // Press Enter -> save
   if (e.key === "Enter") {
     e.preventDefault();
     inputEl.blur(); // triggers onchange
@@ -505,7 +561,7 @@ async function saveEditFromInput(inputEl) {
     inputEl.disabled = true;
     await apiUpdate(sheetName, row0, col0, value, pass);
 
-    // update cachedData locally too
+    // update cachedData locally (best-effort)
     if (sheetName === "Summary") {
       if (cachedData?.summary?.[row0]) cachedData.summary[row0][col0] = value;
     } else {
@@ -525,10 +581,13 @@ async function saveEditFromInput(inputEl) {
    Boot
 -------------------------- */
 (function boot() {
-  // restore admin state (only UI; password still in sessionStorage)
   const pass = sessionStorage.getItem(STORAGE_KEY_ADMIN);
   setAdminUI(!!pass);
 
+  // re-render on rotate/resize (mobile <-> desktop)
+  window.addEventListener("resize", () => {
+    if (cachedData && currentTab === "daily") renderDaily();
+  });
+
   window.onload = () => loadData(true);
 })();
-
