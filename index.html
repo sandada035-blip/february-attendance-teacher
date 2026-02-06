@@ -2,161 +2,167 @@
 <html lang="km">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance Management System Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Attendance Pro (Mobile)</title>
 
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
 
 <body>
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="logo-container" title="School Logo">
-        <img src="logo.png" id="app-logo" alt="Logo" onerror="this.src=''; this.alt='Logo not found';" />
+  <!-- ✅ Desktop/PC block screen -->
+  <div class="desktop-block" id="desktopBlock">
+    <div class="desktop-card">
+      <img src="logo.png" alt="Logo" class="desktop-logo" onerror="this.style.display='none'">
+      <h2>Mobile Only</h2>
+      <p>សូមបើកតាមទូរសព្ទដៃ (Mobile) ដើម្បីមើល Dashboard នេះ។</p>
+      <div class="tips">
+        <div class="tip"><i class="fa-solid fa-mobile-screen"></i> iPhone / Android</div>
+        <div class="tip"><i class="fa-solid fa-wifi"></i> Browser: Chrome/Safari</div>
       </div>
-      <h3 class="app-name">Attendance Pro</h3>
-      <p class="app-sub">ប្រព័ន្ធគ្រប់គ្រងវត្តមាន</p>
     </div>
+  </div>
 
-    <nav class="sidebar-menu" aria-label="Main navigation">
-      <button type="button" class="menu-item active" data-tab="summary" onclick="showTab('summary')">
-        <i class="fas fa-chart-line"></i>
-        <span>ផ្ទាំងគ្រប់គ្រង</span>
-      </button>
-
-      <button type="button" class="menu-item" data-tab="daily" onclick="showTab('daily')">
-        <i class="fas fa-user-check"></i>
-        <span>វត្តមានប្រចាំថ្ងៃ</span>
-      </button>
-
-      <div class="menu-divider"></div>
-
-      <button type="button" class="menu-item admin-only" id="admin-btn" onclick="openAdminLogin()">
-        <i class="fas fa-user-shield"></i>
-        <span>ចូលជា Admin</span>
-      </button>
-
-      <button type="button" class="menu-item admin-only hidden" id="admin-logout-btn" onclick="logoutAdmin()">
-        <i class="fas fa-right-from-bracket"></i>
-        <span>ចាកចេញ Admin</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-footer">
-      <small>© <span id="year"></span> Attendance Pro</small>
-    </div>
-  </aside>
-
-  <main class="main-body">
-    <header class="top-header">
-      <div class="header-info">
-        <h2 id="view-title">សង្ខេបវត្តមានរួម</h2>
-        <span id="admin-status" class="status-badge">Mode: User</span>
-      </div>
-
-      <div class="header-actions">
-        <div id="filter-group" class="filter-group hidden">
-          <div class="input-icon">
-            <i class="fas fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="ស្វែងរកឈ្មោះបុគ្គលិក..." autocomplete="off" oninput="searchTable()" />
-          </div>
-          <select id="day-select" aria-label="Select Day" onchange="renderDaily()"></select>
+  <!-- ✅ Mobile App -->
+  <div class="app" id="app">
+    <!-- Top App Bar (Facebook style) -->
+    <header class="appbar">
+      <div class="appbar-left">
+        <div class="app-avatar">
+          <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
         </div>
+        <div class="appbar-title">
+          <div class="title">Attendance Pro</div>
+          <div class="subtitle" id="subTitle">វត្តមានប្រចាំថ្ងៃ</div>
+        </div>
+      </div>
 
-        <button type="button" class="btn btn-refresh" id="refreshBtn" onclick="loadData(true)">
-          <i class="fas fa-sync-alt" id="refresh-icon"></i>
-          <span>Update</span>
+      <div class="appbar-right">
+        <button class="icon-pill" onclick="openAdminLogin()" aria-label="Admin">
+          <i class="fa-solid fa-user-shield"></i>
+        </button>
+        <button class="icon-pill" onclick="loadData(true)" aria-label="Refresh">
+          <i class="fa-solid fa-rotate"></i>
         </button>
       </div>
     </header>
 
-    <section class="content-area">
-      <div id="loader" class="loader-wrapper hidden" aria-live="polite">
-        <div class="spinner"></div>
-        <p>កំពុងទាញទិន្នន័យពី Server...</p>
+    <!-- Sticky controls (search + day select) -->
+    <div class="controls">
+      <div class="searchbox">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="searchInput" type="text" placeholder="ស្វែងរកឈ្មោះ..." autocomplete="off" oninput="searchCards()" />
+        <button class="clear-btn" onclick="clearSearch()" aria-label="Clear"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div id="error-panel" class="alert hidden" role="alert">
-        <div class="alert-left">
-          <i class="fas fa-triangle-exclamation"></i>
-          <div>
-            <h4>មានបញ្ហា</h4>
-            <p id="error-text">សូមព្យាយាមម្ដងទៀត។</p>
+      <div class="row">
+        <select id="day-select" onchange="renderDaily()" aria-label="Select Day"></select>
+        <span class="mode" id="admin-status">Mode: User</span>
+      </div>
+    </div>
+
+    <!-- Pull-to-refresh hint -->
+    <div class="pull-hint" id="pullHint">
+      <div class="ph-dot"></div>
+      <div class="ph-text" id="pullText">Pull down to refresh</div>
+    </div>
+
+    <!-- Main Feed -->
+    <main class="feed" id="main-view"></main>
+
+    <!-- Loader -->
+    <div class="loader-bar hidden" id="loader">
+      <div class="loader-spin"></div>
+      <span>កំពុងទាញទិន្នន័យ...</span>
+    </div>
+
+    <!-- Error -->
+    <div class="error hidden" id="error-panel">
+      <div class="error-left">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+          <div class="e-title">មានបញ្ហា</div>
+          <div class="e-text" id="error-text">សូមព្យាយាមម្ដងទៀត។</div>
+        </div>
+      </div>
+      <button class="btn" onclick="loadData(true)"><i class="fa-solid fa-rotate-right"></i> Retry</button>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty hidden" id="empty-state">
+      <i class="fa-solid fa-inbox"></i>
+      <h3>មិនមានទិន្នន័យ</h3>
+      <p>សូមចុច Refresh ដើម្បីទាញទិន្នន័យឡើងវិញ។</p>
+      <button class="btn primary" onclick="loadData(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+
+    <!-- Bottom Tabs (FB style) -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="daily" onclick="showTab('daily')">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>Daily</span>
+      </button>
+      <button class="tab" data-tab="summary" onclick="showTab('summary')">
+        <i class="fa-solid fa-chart-simple"></i>
+        <span>Summary</span>
+      </button>
+      <button class="tab" onclick="scrollToTop()">
+        <i class="fa-solid fa-arrow-up"></i>
+        <span>Top</span>
+      </button>
+    </nav>
+
+    <!-- Admin Modal -->
+    <div class="modal hidden" id="admin-modal" role="dialog" aria-modal="true">
+      <div class="backdrop" onclick="closeAdminLogin()"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div class="m-title"><i class="fa-solid fa-user-shield"></i> Admin Login</div>
+          <button class="icon-pill" onclick="closeAdminLogin()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <label>Password</label>
+          <div class="passbox">
+            <i class="fa-solid fa-key"></i>
+            <input id="admin-pass" type="password" placeholder="បញ្ចូលលេខសម្ងាត់..." autocomplete="current-password">
+          </div>
+          <div class="hint">* Admin អាចកែទិន្នន័យ និង Save ទៅ Google Sheets</div>
+
+          <div class="modal-actions">
+            <button class="btn" onclick="closeAdminLogin()">Cancel</button>
+            <button class="btn primary" onclick="loginAdmin()"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+          </div>
+
+          <div class="m-error hidden" id="admin-login-error"></div>
+
+          <div class="logout-row hidden" id="logoutRow">
+            <button class="btn danger" onclick="logoutAdmin()"><i class="fa-solid fa-right-from-bracket"></i> Logout Admin</button>
           </div>
         </div>
-        <button type="button" class="btn btn-sm" onclick="loadData(true)">
-          <i class="fas fa-rotate-right"></i> Retry
-        </button>
       </div>
+    </div>
 
-      <div id="main-view" class="data-card shadow"></div>
-
-      <div id="empty-state" class="empty-state hidden">
-        <i class="fas fa-inbox"></i>
-        <h3>មិនមានទិន្នន័យ</h3>
-        <p>សូមចុច Update ដើម្បីទាញទិន្នន័យឡើងវិញ។</p>
-        <button type="button" class="btn" onclick="loadData(true)">
-          <i class="fas fa-sync-alt"></i> Update
-        </button>
-      </div>
-    </section>
-  </main>
-
-  <nav class="mobile-nav" aria-label="Mobile navigation">
-    <button type="button" class="m-nav-item active" data-tab="summary" onclick="showTab('summary')" aria-label="Summary">
-      <i class="fas fa-th-large"></i>
-    </button>
-
-    <button type="button" class="m-nav-item" data-tab="daily" onclick="showTab('daily')" aria-label="Daily">
-      <i class="fas fa-calendar-day"></i>
-    </button>
-
-    <button type="button" class="m-nav-item" onclick="loadData(true)" aria-label="Refresh">
-      <i class="fas fa-sync"></i>
-    </button>
-  </nav>
-
-  <div class="modal hidden" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
-    <div class="modal-backdrop" onclick="closeAdminLogin()"></div>
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="admin-modal-title"><i class="fas fa-user-shield"></i> Admin Login</h3>
-        <button type="button" class="icon-btn" onclick="closeAdminLogin()" aria-label="Close">
-          <i class="fas fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <label class="field-label" for="admin-pass">Password</label>
-        <div class="input-icon">
-          <i class="fas fa-key"></i>
-          <input type="password" id="admin-pass" placeholder="បញ្ចូលលេខសម្ងាត់..." autocomplete="current-password" />
-        </div>
-
-        <p class="hint">* Admin អាចកែទិន្នន័យ និង Save ទៅ Google Sheets</p>
-
-        <div class="modal-actions">
-          <button type="button" class="btn btn-ghost" onclick="closeAdminLogin()">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="loginAdmin()">
-            <i class="fas fa-right-to-bracket"></i> Login
-          </button>
-        </div>
-
-        <p id="admin-login-error" class="form-error hidden"></p>
-      </div>
+    <!-- Toast -->
+    <div class="toast hidden" id="toast">
+      <i class="fa-solid fa-circle-check"></i>
+      <span id="toast-text">Done</span>
     </div>
   </div>
 
-  <div class="toast hidden" id="toast" aria-live="polite">
-    <i class="fas fa-circle-check"></i>
-    <span id="toast-text">Done</span>
-  </div>
-
   <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+    // ✅ Mobile-only gate (simple)
+    function isMobileUA() {
+      const w = Math.min(window.innerWidth, window.innerHeight);
+      return w <= 900; // allow tablets/phones
+    }
+    const desktopBlock = document.getElementById("desktopBlock");
+    const app = document.getElementById("app");
+    const mobileOk = isMobileUA();
+    desktopBlock.style.display = mobileOk ? "none" : "flex";
+    app.style.display = mobileOk ? "block" : "none";
   </script>
+
   <script src="script.js"></script>
 </body>
 </html>
