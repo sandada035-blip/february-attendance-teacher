@@ -356,9 +356,9 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
   const colLn     = findCol(header, ["នាមត្រកូល", "last"]);
   const colSex    = findCol(header, ["ភេទ", "sex"]);
   const colRole   = findCol(header, ["តួនាទី", "role", "position"]);
-  const colTotal  = findCol(header, ["សរុបវត្តមាន", "total"]);
-  const colAbsent = findCol(header, ["សរុបអវត្តមាន", "absent"]);
-  const colLate   = findCol(header, ["សរុបយឺត", "late"]);
+  const colTotal  = findCol(header, ["សរុបស្កេន", "total"]);
+  const colAbsent = findCol(header, ["សរុបភ្លេចស្កេន", "absent"]);
+  const colLate   = findCol(header, ["សរុបច្បាប់", "late"]);
 
   const colExtra  = header.length >= 9 ? 8 : -1; // column I index=8
 
@@ -395,10 +395,10 @@ function buildSummaryCards(sheetName, headerIdx, header, body) {
         <div class="card-grid">
           ${cardKV("អត្តលេខ", safeVal(row, gID), sheetName, realRow0, gID)}
           ${cardKV("ភេទ", safeVal(row, gSex), sheetName, realRow0, gSex)}
-          ${cardKV("សរុបវត្តមាន", safeVal(row, gTotal), sheetName, realRow0, gTotal)}
-          ${cardKV("សរុបអវត្តមាន", safeVal(row, gAbsent), sheetName, realRow0, gAbsent)}
-          ${cardKV("សរុបយឺត", safeVal(row, gLate), sheetName, realRow0, gLate)}
-          ${colExtra >= 0 ? cardKV(header[colExtra] || "សរុបបន្ថែម", safeVal(row, colExtra), sheetName, realRow0, colExtra) : ""}
+          ${cardKV("សរុបស្កេន", safeVal(row, gTotal), sheetName, realRow0, gTotal)}
+          ${cardKV("សរុបភ្លេចស្កេន", safeVal(row, gAbsent), sheetName, realRow0, gAbsent)}
+          ${cardKV("សរុបច្បាប់", safeVal(row, gLate), sheetName, realRow0, gLate)}
+          ${colExtra >= 0 ? cardKV(header[colExtra] || "សរុបបេសកម្ម", safeVal(row, colExtra), sheetName, realRow0, colExtra) : ""}
         </div>
       </div>
     `;
@@ -781,6 +781,7 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   setAdminUI(!!pass);
   window.onload = () => loadData(true);
 })();
+
 
 
 
