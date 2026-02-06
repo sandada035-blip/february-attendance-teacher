@@ -1,6 +1,6 @@
 /****************************************************
  * Attendance Pro - script.js (FINAL PRO)
- * Desktop: Table
+ * Desktop: Table (✅ Freeze Header)
  * Mobile: Facebook-style Cards
  * Admin: Auth + Edit/Save (Table + Cards)
  ****************************************************/
@@ -220,6 +220,13 @@ function render() {
   else renderDaily();
 }
 
+/* ✅ Helper: build header row with freeze first column (optional) */
+function buildTheadRow(header) {
+  return header
+    .map((h, c) => `<th class="${c === 0 ? "freeze-col" : ""}">${escapeHtml(h)}</th>`)
+    .join("");
+}
+
 function renderSummary() {
   $("view-title").textContent = "សង្ខេបវត្តមានរួម";
 
@@ -237,22 +244,29 @@ function renderSummary() {
   // Summary always show table (cards optional; keep table for now)
   $("main-view").classList.remove("has-cards");
 
-  let html = `<table>
-    <thead><tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
-    <tbody>`;
+  let html = `
+    <div class="table-scroller">
+      <table>
+        <thead>
+          <tr>${buildTheadRow(header)}</tr>
+        </thead>
+        <tbody>
+  `;
 
   for (let r = 0; r < body.length; r++) {
     const row = body[r] || [];
     const realRow0 = headerIdx + 1 + r;
 
     html += "<tr>";
+
     for (let c = 0; c < header.length; c++) {
       const cell = row[c] ?? "";
       const isZero = String(cell).trim() === "0";
       const style = isZero ? ` style="color:#b91c1c;font-weight:800;"` : "";
+      const freezeClass = c === 0 ? ` class="freeze-col"` : "";
 
       if (isAdmin) {
-        html += `<td>
+        html += `<td${freezeClass}>
           <input class="edit-input"
             value="${escapeHtml(cell)}"
             data-sheet="Summary"
@@ -263,13 +277,19 @@ function renderSummary() {
           />
         </td>`;
       } else {
-        html += `<td${style}>${escapeHtml(cell)}</td>`;
+        html += `<td${freezeClass}${style}>${escapeHtml(cell)}</td>`;
       }
     }
+
     html += "</tr>";
   }
 
-  html += "</tbody></table>";
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
   $("main-view").innerHTML = html;
 }
 
@@ -299,32 +319,38 @@ function renderDaily() {
 
   // ✅ Mobile: Cards
   if (isMobile()) {
-    $("main-view").classList.add("has-cards"); // important for CSS hide table
+    $("main-view").classList.add("has-cards");
     $("main-view").innerHTML = renderDailyCards(sheetName, headerIdx, header, body);
-    // apply current search filter on cards too
     searchTable();
     return;
   }
 
-  // ✅ Desktop: Table
+  // ✅ Desktop: Table (✅ Freeze Header)
   $("main-view").classList.remove("has-cards");
 
-  let html = `<table>
-    <thead><tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
-    <tbody>`;
+  let html = `
+    <div class="table-scroller">
+      <table>
+        <thead>
+          <tr>${buildTheadRow(header)}</tr>
+        </thead>
+        <tbody>
+  `;
 
   for (let r = 0; r < body.length; r++) {
     const row = body[r] || [];
     const realRow0 = headerIdx + 1 + r;
 
     html += "<tr>";
+
     for (let c = 0; c < header.length; c++) {
       const cell = row[c] ?? "";
       const isZero = String(cell).trim() === "0";
       const style = isZero ? ` style="color:#b91c1c;font-weight:800;"` : "";
+      const freezeClass = c === 0 ? ` class="freeze-col"` : "";
 
       if (isAdmin) {
-        html += `<td>
+        html += `<td${freezeClass}>
           <input class="edit-input"
             value="${escapeHtml(cell)}"
             data-sheet="${escapeHtml(sheetName)}"
@@ -335,13 +361,19 @@ function renderDaily() {
           />
         </td>`;
       } else {
-        html += `<td${style}>${escapeHtml(cell)}</td>`;
+        html += `<td${freezeClass}${style}>${escapeHtml(cell)}</td>`;
       }
     }
+
     html += "</tr>";
   }
 
-  html += "</tbody></table>";
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
   $("main-view").innerHTML = html;
 }
 
