@@ -572,15 +572,15 @@ function printSummaryA4() {
 }
 
 function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, dateStr }) {
+  const escapeHtml = (text) => String(text).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+
   const thead = `<tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
   const tbodyRows = (rows) =>
     rows.map(r => `<tr>${header.map((_, i) => `<td>${escapeHtml(r[i] ?? "")}</td>`).join("")}</tr>`).join("");
 
-  // Texts requested
   const kingdom = "ព្រះរាជាណាចក្រកម្ពុជា";
-  const motto = "ជាតិ  សាសនា  ព្រះមហាក្សត្រ";
-  const reportTitle = "របាយការណ៍វត្តមានបុគ្គលិកប្រចាំខែកុម្ភ";
-
+  const motto = "ជាតិ សាសនា ព្រះមហាក្សត្រ";
+  const reportTitle = "របាយការណ៍វត្តមានបុគ្គលិកប្រចាំខែកុម្ភៈ";
   const schoolLine1 = "សាលាបឋមសិក្សាសម្តេចព្រះរាជអគ្គមហេសី";
   const schoolLine2 = "នរោត្តមមុនីនាថសីហនុ";
 
@@ -589,132 +589,89 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
 <html lang="km">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Print Summary</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Khmer+Moul&family=Hanuman:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Khmer+Moul&family=Hanuman:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 portrait; margin: 12mm; }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Hanuman","Inter",sans-serif; color:#000; }
+  @page { size: A4 portrait; margin: 10mm 15mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+  body { margin: 0; font-family: "Hanuman", serif; color: #000; line-height: 1.4; }
 
-  .page { page-break-after: always; }
+  .page { page-break-after: always; position: relative; min-height: 277mm; }
   .page:last-child { page-break-after: auto; }
 
-  /* ===== Header Layout (attractive) ===== */
-  .header-wrap{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap: 10mm;
-    margin-bottom: 5mm;
+  /* Header Section */
+  .header-container { display: flex; justify-content: space-between; margin-bottom: 5mm; position: relative; }
+  
+  .left-side { text-align: center; width: 40%; }
+  .logo-placeholder { width: 65px; height: 65px; margin: 0 auto 5px; border-radius: 50%; border: 1px solid #ddd; overflow: hidden; }
+  .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+  .school-name { font-family: "Hanuman"; font-weight: 700; font-size: 10pt; line-height: 1.2; }
+
+  .right-side { text-align: center; width: 50%; }
+  .moul { font-family: "Khmer Moul", cursive; font-weight: normal; }
+  .kingdom { font-size: 11pt; margin-bottom: 2px; }
+  .motto { font-size: 10pt; position: relative; }
+  .motto::after { content: ""; display: block; width: 60px; height: 1px; background: #000; margin: 3px auto; }
+
+  /* Title */
+  .report-title { 
+    text-align: center; 
+    width: 100%; 
+    font-family: "Khmer Moul"; 
+    font-size: 13pt; 
+    margin: 15mm 0 8mm; 
+    text-decoration: underline; 
+    text-underline-offset: 5px;
   }
 
-  .left-block{
-    width: 38%;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap: 3mm;
+  /* Table Style */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th, td { 
+    border: 1px solid #000; 
+    padding: 6px 2px; 
+    font-size: 8.5pt; 
+    text-align: center; 
+    overflow: hidden;
+    white-space: nowrap;
   }
+  th { background-color: #f2f2f2; font-weight: 700; }
+  
+  /* Column Widths (Adjust based on your 9 columns) */
+  th:nth-child(1) { width: 12%; } /* ID */
+  th:nth-child(2) { width: 15%; } /* First Name */
+  th:nth-child(3) { width: 15%; } /* Last Name */
+  th:nth-child(4) { width: 6%; }  /* Sex */
+  th:nth-child(5) { width: 18%; } /* Position */
+  
+  /* Summary Table */
+  .summary-table { margin-top: 0; border-top: none; }
+  .summary-table td { font-weight: 700; font-size: 10pt; padding: 10px; }
 
-  .logo-box{
-    width: 26mm;
-    height: 26mm;
-    border-radius: 50%;
-    overflow:hidden;
-    border: 1px solid #000;
-  }
-  .logo-box img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-  }
-
-  .school{
-    font-size: 10.5pt;
-    line-height: 1.35;
-    font-weight: 700;
-  }
-
-  .center-block{
-    width: 62%;
-    text-align:center;
-    padding-top: 1mm;
-  }
-
-  .moul{
-    font-family: "Khmer Moul", "Hanuman", sans-serif;
-    font-weight: 400;
-    letter-spacing: .2px;
-  }
-  .kingdom{ font-size: 13pt; }
-  .motto{ font-size: 12pt; margin-top: 1mm; }
-  .report{
-    font-size: 12pt;
-    margin-top: 3mm;
-    text-decoration: underline;
-  }
-
-  /* ===== Table ===== */
-  table { width:100%; border-collapse: collapse; table-layout: fixed; }
-  th, td {
-    border: 1px solid #000;
-    padding: 2.1mm 1.4mm;
-    font-size: 9.4pt;
-    text-align: center;
-    vertical-align: middle;
-    word-wrap: break-word;
-  }
-  th { font-weight: 700; }
-
-  /* ===== Footer ===== */
-  .footer-box { margin-top: 6mm; width:100%; }
-  .totals { width:100%; border-collapse: collapse; margin-top: 2mm; }
-  .totals td {
-    border: 1px solid #000;
-    padding: 3mm 2mm;
-    font-size: 10pt;
-    font-weight: 700;
-    text-align:center;
-  }
-
-  .sign{
-    margin-top: 10mm;
-    display:flex;
-    justify-content: space-between;
-    gap: 10mm;
-    font-size: 10pt;
-  }
-  .sign .box { width: 45%; text-align: center; }
-  .line { margin-top: 18mm; border-bottom: 1px dotted #000; height: 1px; }
-  .date { margin-top: 4mm; font-size:10pt; }
+  /* Footer / Signature Section */
+  .footer-sig { margin-top: 10mm; display: flex; justify-content: space-between; }
+  .sig-box { width: 40%; text-align: center; font-size: 10pt; }
+  .sig-title { font-weight: 700; margin-bottom: 20mm; font-family: "Khmer Moul"; font-size: 9pt; }
+  .sig-name { font-weight: 700; }
+  .date-line { margin-bottom: 5px; font-style: italic; }
 
 </style>
 </head>
-
 <body>
-  <!-- ================= Page 1 ================= -->
-  <div class="page">
-    <div class="header-wrap">
-      <!-- ✅ Left: Logo above school name -->
-      <div class="left-block">
-        <div class="logo-box">
-          <img src="logo.png" onerror="this.parentElement.style.display='none'">
-        </div>
-        <div class="school">${escapeHtml(schoolLine1)}</div>
-        <div class="school">${escapeHtml(schoolLine2)}</div>
-      </div>
 
-      <!-- ✅ Center: Kingdom + motto + report title (Khmer Moul) -->
-      <div class="center-block">
+  <div class="page">
+    <div class="header-container">
+      <div class="left-side">
+        <div class="logo-placeholder">
+          <img src="logo.png" alt="Logo">
+        </div>
+        <div class="school-name">${escapeHtml(schoolLine1)}<br>${escapeHtml(schoolLine2)}</div>
+      </div>
+      <div class="right-side">
         <div class="moul kingdom">${escapeHtml(kingdom)}</div>
         <div class="moul motto">${escapeHtml(motto)}</div>
-        <div class="moul report">${escapeHtml(reportTitle)}</div>
       </div>
     </div>
+
+    <div class="report-title">${escapeHtml(reportTitle)}</div>
 
     <table>
       <thead>${thead}</thead>
@@ -722,37 +679,35 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
     </table>
   </div>
 
-  <!-- ================= Page 2 ================= -->
   <div class="page">
     <table>
-      <!-- ✅ Keep only body on page 2 to avoid duplicate header -->
+      <thead>${thead}</thead>
       <tbody>${tbodyRows(page2)}</tbody>
     </table>
 
-    <div class="footer-box">
-      <table class="totals">
-        <tr>
-          <td>ស្រី: ${female} នាក់</td>
-          <td>ប្រុស: ${male} នាក់</td>
-          <td>សរុបវត្តមាន: ${sumAttend}</td>
-        </tr>
-      </table>
+    <table class="summary-table">
+      <tr>
+        <td style="width: 33%;">សរុប: ${male + female} នាក់</td>
+        <td style="width: 33%;">ស្រី: ${female} នាក់</td>
+        <td style="width: 34%;">វត្តមានសរុប: ${sumAttend}</td>
+      </tr>
+    </table>
 
-      <div class="sign">
-        <div class="box">
-          <div>បានឃើញ និង អនុម័ត</div>
-          <div><b>នាយកសាលា</b></div>
-          <div class="line"></div>
-        </div>
-
-        <div class="box">
-          <div class="date">ថ្ងៃទី ${escapeHtml(dateStr)}</div>
-          <div><b>អ្នករៀបចំ</b></div>
-          <div class="line"></div>
-        </div>
+    <div class="footer-sig">
+      <div class="sig-box">
+        <div>បានឃើញ និង ឯកភាព</div>
+        <div class="sig-title">នាយកសាលា</div>
+        <div class="sig-name">..........................................</div>
+      </div>
+      <div class="sig-box">
+        <div class="date-line">ថ្ងៃទី.......ខែ.......ឆ្នាំ២០២៦</div>
+        <div class="sig-title">អ្នករៀបចំទិន្នន័យ</div>
+        <br><br>
+        <div class="sig-name">ហាម ម៉ាលីដា</div>
       </div>
     </div>
   </div>
+
 </body>
 </html>
 `;
@@ -800,5 +755,6 @@ function buildPrintSummaryHTML({ header, page1, page2, male, female, sumAttend, 
   setAdminUI(!!pass);
   window.onload = () => loadData(true);
 })();
+
 
 
