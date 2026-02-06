@@ -1,21 +1,21 @@
 /****************************************************
- * Attendance Pro - script.js (FINAL PRO)
- * Desktop: Table (✅ Freeze Header)
- * Mobile: Facebook-style Cards
- * Admin: Auth + Edit/Save (Table + Cards)
+ * Attendance Pro - Mobile Only (Facebook style cards)
+ * - Daily + Summary as feed cards
+ * - Search cards
+ * - Admin auth + edit/save on cards
  ****************************************************/
 
 const WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbxIz2rJ-HxNX2Pe0Tw7_GURp11X_8Jd0C_es_3irLjOPG3iVl-aaur2Lc6gqy-PTdbU/exec";
 
 let cachedData = null;
-let currentTab = "summary";
+let currentTab = "daily"; // default daily
 let isAdmin = false;
 
 const STORAGE_KEY_ADMIN = "attendance_admin_pass";
 
 /* -------------------------
-   Helpers (DOM/UI)
+   Helpers
 -------------------------- */
 function $(id) { return document.getElementById(id); }
 
@@ -39,7 +39,6 @@ function showError(msg) {
   $("error-text").textContent = msg || "សូមព្យាយាមម្ដងទៀត។";
   setHidden($("error-panel"), false);
 }
-
 function hideError() { setHidden($("error-panel"), true); }
 
 function showEmpty(show) { setHidden($("empty-state"), !show); }
@@ -59,23 +58,14 @@ function setAdminUI(on) {
   $("admin-status").style.background = on ? "rgba(230,30,37,.12)" : "";
   $("admin-status").style.color = on ? "#991b1b" : "";
 
-  setHidden($("admin-btn"), on);
-  setHidden($("admin-logout-btn"), !on);
+  // show logout button inside modal
+  setHidden($("logoutRow"), !on);
 
   if (cachedData) render();
 }
 
 /* -------------------------
-   Responsive / Mobile
--------------------------- */
-function isMobile() {
-  return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
-}
-
-/* -------------------------
-   Table normalization
-   - Finds best header row within first N rows
-   - Trims extra empty columns
+   Normalize table
 -------------------------- */
 function normalizeTable(data) {
   if (!Array.isArray(data) || data.length === 0) {
@@ -115,7 +105,7 @@ function normalizeTable(data) {
 }
 
 /* -------------------------
-   API calls (CORS-safe)
+   API calls
 -------------------------- */
 async function apiGetData() {
   const url = `${WEB_APP_URL}?action=data&t=${Date.now()}`;
@@ -128,11 +118,9 @@ async function apiGetData() {
 async function apiAuth(pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
-    // ✅ avoid CORS preflight
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "auth", pass }),
   });
-
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "Invalid Password");
   return true;
@@ -142,14 +130,7 @@ async function apiUpdate(sheetName, row0, col0, value, pass) {
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      action: "update",
-      sheetName,
-      row: row0,
-      col: col0,
-      value,
-      pass,
-    }),
+    body: JSON.stringify({ action: "update", sheetName, row: row0, col: col0, value, pass }),
   });
 
   const json = await res.json();
@@ -158,7 +139,7 @@ async function apiUpdate(sheetName, row0, col0, value, pass) {
 }
 
 /* -------------------------
-   Main Load
+   Load + Select
 -------------------------- */
 async function loadData(force = false) {
   hideError();
@@ -171,8 +152,7 @@ async function loadData(force = false) {
       return;
     }
 
-    const data = await apiGetData();
-    cachedData = data;
+    cachedData = await apiGetData();
 
     populateDaySelect();
 
@@ -208,177 +188,46 @@ function populateDaySelect() {
   days.forEach(d => daySelect.add(new Option(d, d)));
 
   if (prev && days.includes(prev)) daySelect.value = prev;
+  if (!daySelect.value && days.length) daySelect.value = days[days.length - 1]; // last/day
 }
 
 /* -------------------------
-   Render (Summary / Daily)
+   Tabs
 -------------------------- */
+function showTab(tab) {
+  currentTab = tab;
+
+  document.querySelectorAll(".tab").forEach(el => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
+
+  // title
+  $("subTitle").textContent = tab === "daily" ? "វត្តមានប្រចាំថ្ងៃ" : "សង្ខេបវត្តមានរួម";
+
+  // search reset
+  clearSearch(false);
+  render();
+}
+
 function render() {
-  setHidden($("filter-group"), currentTab !== "daily");
-
-  if (currentTab === "summary") renderSummary();
-  else renderDaily();
+  // day select visible only in daily
+  $("day-select").parentElement.style.display = currentTab === "daily" ? "flex" : "none";
+  if (currentTab === "daily") renderDaily();
+  else renderSummary();
 }
 
-/* ✅ Helper: build header row with freeze first column (optional) */
-function buildTheadRow(header) {
-  return header
-    .map((h, c) => `<th class="${c === 0 ? "freeze-col" : ""}">${escapeHtml(h)}</th>`)
-    .join("");
+function clearSearch(showToastMsg = true) {
+  $("searchInput").value = "";
+  if (showToastMsg) showToast("Cleared");
+  searchCards();
 }
 
-function renderSummary() {
-  $("view-title").textContent = "សង្ខេបវត្តមានរួម";
-
-  const raw = cachedData?.summary || [];
-  const { headerIdx, header, body } = normalizeTable(raw);
-
-  if (!header.length) {
-    $("main-view").innerHTML = "";
-    showEmpty(true);
-    return;
-  }
-
-  showEmpty(false);
-
-  // Summary always show table (cards optional; keep table for now)
-  $("main-view").classList.remove("has-cards");
-
-  let html = `
-    <div class="table-scroller">
-      <table>
-        <thead>
-          <tr>${buildTheadRow(header)}</tr>
-        </thead>
-        <tbody>
-  `;
-
-  for (let r = 0; r < body.length; r++) {
-    const row = body[r] || [];
-    const realRow0 = headerIdx + 1 + r;
-
-    html += "<tr>";
-
-    for (let c = 0; c < header.length; c++) {
-      const cell = row[c] ?? "";
-      const isZero = String(cell).trim() === "0";
-      const style = isZero ? ` style="color:#b91c1c;font-weight:800;"` : "";
-      const freezeClass = c === 0 ? ` class="freeze-col"` : "";
-
-      if (isAdmin) {
-        html += `<td${freezeClass}>
-          <input class="edit-input"
-            value="${escapeHtml(cell)}"
-            data-sheet="Summary"
-            data-row="${realRow0}"
-            data-col="${c}"
-            onkeydown="onEditKeyDown(event,this)"
-            onchange="saveEditFromInput(this)"
-          />
-        </td>`;
-      } else {
-        html += `<td${freezeClass}${style}>${escapeHtml(cell)}</td>`;
-      }
-    }
-
-    html += "</tr>";
-  }
-
-  html += `
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  $("main-view").innerHTML = html;
-}
-
-function renderDaily() {
-  $("view-title").textContent = "វត្តមានប្រចាំថ្ងៃ";
-
-  if (!cachedData?.daily) {
-    $("main-view").innerHTML = "";
-    showEmpty(true);
-    return;
-  }
-
-  const daySelect = $("day-select");
-  const sheetName = daySelect?.value || Object.keys(cachedData.daily)[0];
-  if (daySelect && !daySelect.value && sheetName) daySelect.value = sheetName;
-
-  const raw = cachedData.daily[sheetName] || [];
-  const { headerIdx, header, body } = normalizeTable(raw);
-
-  if (!header.length) {
-    $("main-view").innerHTML = "";
-    showEmpty(true);
-    return;
-  }
-
-  showEmpty(false);
-
-  // ✅ Mobile: Cards
-  if (isMobile()) {
-    $("main-view").classList.add("has-cards");
-    $("main-view").innerHTML = renderDailyCards(sheetName, headerIdx, header, body);
-    searchTable();
-    return;
-  }
-
-  // ✅ Desktop: Table (✅ Freeze Header)
-  $("main-view").classList.remove("has-cards");
-
-  let html = `
-    <div class="table-scroller">
-      <table>
-        <thead>
-          <tr>${buildTheadRow(header)}</tr>
-        </thead>
-        <tbody>
-  `;
-
-  for (let r = 0; r < body.length; r++) {
-    const row = body[r] || [];
-    const realRow0 = headerIdx + 1 + r;
-
-    html += "<tr>";
-
-    for (let c = 0; c < header.length; c++) {
-      const cell = row[c] ?? "";
-      const isZero = String(cell).trim() === "0";
-      const style = isZero ? ` style="color:#b91c1c;font-weight:800;"` : "";
-      const freezeClass = c === 0 ? ` class="freeze-col"` : "";
-
-      if (isAdmin) {
-        html += `<td${freezeClass}>
-          <input class="edit-input"
-            value="${escapeHtml(cell)}"
-            data-sheet="${escapeHtml(sheetName)}"
-            data-row="${realRow0}"
-            data-col="${c}"
-            onkeydown="onEditKeyDown(event,this)"
-            onchange="saveEditFromInput(this)"
-          />
-        </td>`;
-      } else {
-        html += `<td${freezeClass}${style}>${escapeHtml(cell)}</td>`;
-      }
-    }
-
-    html += "</tr>";
-  }
-
-  html += `
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  $("main-view").innerHTML = html;
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /* -------------------------
-   Cards rendering (Mobile)
+   Cards (Facebook style)
 -------------------------- */
 function findCol(header, keywords) {
   const lower = header.map(h => String(h || "").toLowerCase());
@@ -419,19 +268,46 @@ function cardKV(label, value, sheetName, row0, col0) {
   `;
 }
 
-function renderDailyCards(sheetName, headerIdx, header, body) {
+function renderDaily() {
+  if (!cachedData?.daily) {
+    $("main-view").innerHTML = "";
+    showEmpty(true);
+    return;
+  }
+
+  const daySelect = $("day-select");
+  const sheetName = daySelect?.value || Object.keys(cachedData.daily)[0];
+  if (daySelect && !daySelect.value && sheetName) daySelect.value = sheetName;
+
+  const raw = cachedData.daily[sheetName] || [];
+  const { headerIdx, header, body } = normalizeTable(raw);
+
+  if (!header.length) {
+    $("main-view").innerHTML = "";
+    showEmpty(true);
+    return;
+  }
+
+  showEmpty(false);
+  $("main-view").innerHTML = buildDailyCards(sheetName, headerIdx, header, body);
+  searchCards();
+}
+
+function buildDailyCards(sheetName, headerIdx, header, body) {
   const colRef   = findCol(header, ["reference", "ref"]);
-  const colEmp   = findCol(header, ["employee"]);
+  const colEmp   = findCol(header, ["employee", "emp id", "id"]);
   const colFn    = findCol(header, ["first"]);
   const colLn    = findCol(header, ["last"]);
+  const colName  = findCol(header, ["name"]);
   const colDate  = findCol(header, ["date"]);
-  const colTime  = findCol(header, ["timetable", "time table", "session"]);
+  const colTime  = findCol(header, ["timetable", "time table", "session", "shift"]);
   const colIn    = findCol(header, ["check in", "checkin"]);
   const colOut   = findCol(header, ["check out", "checkout"]);
   const colClkIn = findCol(header, ["clock in", "clockin"]);
   const colClkOut= findCol(header, ["clock out", "clockout"]);
+  const colRemark= findCol(header, ["remark", "remarks", "note"]);
 
-  let html = `<div class="cards mobile-only">`;
+  let html = "";
 
   for (let r = 0; r < body.length; r++) {
     const row = body[r] || [];
@@ -439,80 +315,103 @@ function renderDailyCards(sheetName, headerIdx, header, body) {
 
     const first = colFn >= 0 ? row[colFn] : "";
     const last  = colLn >= 0 ? row[colLn] : "";
-    const fullName = `${first || ""} ${last || ""}`.trim()
-      || (colEmp >= 0 ? row[colEmp] : "")
-      || "(No name)";
-
+    const fallbackName = colName >= 0 ? row[colName] : "";
+    const fullName = `${first || ""} ${last || ""}`.trim() || fallbackName || "(No name)";
     const badge = (colTime >= 0 ? row[colTime] : "") || "Daily";
 
     html += `
-      <div class="card-item" data-search="${escapeHtml((fullName + " " + (row.join(" "))).toLowerCase())}">
+      <div class="card-item" data-search="${escapeHtml((fullName + " " + row.join(" ")).toLowerCase())}">
         <div class="card-top">
           <div class="card-name" title="${escapeHtml(fullName)}">${escapeHtml(fullName)}</div>
           <div class="card-badge">${escapeHtml(badge)}</div>
         </div>
 
         <div class="card-grid">
-          ${cardKV("Reference ID", colRef >= 0 ? row[colRef] : "", sheetName, realRow0, colRef)}
           ${cardKV("Employee ID",  colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
+          ${cardKV("Reference",    colRef >= 0 ? row[colRef] : "", sheetName, realRow0, colRef)}
           ${cardKV("Date",         colDate >= 0 ? row[colDate] : "", sheetName, realRow0, colDate)}
           ${cardKV("Check In",     colIn >= 0 ? row[colIn] : "", sheetName, realRow0, colIn)}
           ${cardKV("Check Out",    colOut >= 0 ? row[colOut] : "", sheetName, realRow0, colOut)}
           ${cardKV("Clock In",     colClkIn >= 0 ? row[colClkIn] : "", sheetName, realRow0, colClkIn)}
           ${cardKV("Clock Out",    colClkOut >= 0 ? row[colClkOut] : "", sheetName, realRow0, colClkOut)}
+          ${cardKV("Remark",       colRemark >= 0 ? row[colRemark] : "", sheetName, realRow0, colRemark)}
         </div>
       </div>
     `;
   }
 
-  html += `</div>`;
-  return html;
+  return html || "";
+}
+
+function renderSummary() {
+  const raw = cachedData?.summary || [];
+  const { headerIdx, header, body } = normalizeTable(raw);
+
+  if (!header.length) {
+    $("main-view").innerHTML = "";
+    showEmpty(true);
+    return;
+  }
+
+  showEmpty(false);
+
+  // Summary as cards too
+  $("main-view").innerHTML = buildSummaryCards("Summary", headerIdx, header, body);
+  searchCards();
+}
+
+function buildSummaryCards(sheetName, headerIdx, header, body) {
+  const colName = findCol(header, ["name"]);
+  const colEmp  = findCol(header, ["employee", "emp", "id"]);
+  const colStatus = findCol(header, ["status"]);
+  const colTotal = findCol(header, ["total"]);
+  const colAbsent = findCol(header, ["absent"]);
+  const colLate = findCol(header, ["late"]);
+
+  let html = "";
+
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r] || [];
+    const realRow0 = headerIdx + 1 + r;
+
+    const name = colName >= 0 ? row[colName] : (row[0] ?? "(No name)");
+    const badge = colStatus >= 0 ? row[colStatus] : "Summary";
+
+    // Show a few important fields; the rest can be edited in admin (optional)
+    html += `
+      <div class="card-item" data-search="${escapeHtml((String(name) + " " + row.join(" ")).toLowerCase())}">
+        <div class="card-top">
+          <div class="card-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+          <div class="card-badge">${escapeHtml(badge)}</div>
+        </div>
+
+        <div class="card-grid">
+          ${cardKV("Employee", colEmp >= 0 ? row[colEmp] : "", sheetName, realRow0, colEmp)}
+          ${cardKV("Total",    colTotal >= 0 ? row[colTotal] : "", sheetName, realRow0, colTotal)}
+          ${cardKV("Absent",   colAbsent >= 0 ? row[colAbsent] : "", sheetName, realRow0, colAbsent)}
+          ${cardKV("Late",     colLate >= 0 ? row[colLate] : "", sheetName, realRow0, colLate)}
+        </div>
+      </div>
+    `;
+  }
+
+  return html || "";
 }
 
 /* -------------------------
-   Search (Table + Cards)
+   Search
 -------------------------- */
-function searchTable() {
+function searchCards() {
   const q = ($("searchInput")?.value || "").toLowerCase().trim();
-
-  // Table filter
-  const table = document.querySelector("#main-view table");
-  if (table) {
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach(tr => {
-      const text = tr.innerText.toLowerCase();
-      tr.style.display = text.includes(q) ? "" : "none";
-    });
-  }
-
-  // Cards filter
   const cards = document.querySelectorAll("#main-view .card-item");
-  if (cards && cards.length) {
-    cards.forEach(card => {
-      const text = (card.getAttribute("data-search") || "").toLowerCase();
-      card.style.display = text.includes(q) ? "" : "none";
-    });
-  }
+  cards.forEach(card => {
+    const text = (card.getAttribute("data-search") || "").toLowerCase();
+    card.style.display = text.includes(q) ? "" : "none";
+  });
 }
 
 /* -------------------------
-   Tabs (Active states)
--------------------------- */
-function showTab(tab) {
-  currentTab = tab;
-
-  document.querySelectorAll(".menu-item").forEach(el => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-  document.querySelectorAll(".m-nav-item").forEach(el => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-
-  render();
-}
-
-/* -------------------------
-   Admin Modal & Auth
+   Admin modal & auth
 -------------------------- */
 function openAdminLogin() {
   $("admin-pass").value = "";
@@ -523,6 +422,17 @@ function openAdminLogin() {
 
 function closeAdminLogin() {
   setHidden($("admin-modal"), true);
+}
+
+function showAdminError(msg) {
+  const el = $("admin-login-error");
+  if (!msg) {
+    setHidden(el, true);
+    el.textContent = "";
+    return;
+  }
+  el.textContent = msg;
+  setHidden(el, false);
 }
 
 async function loginAdmin() {
@@ -549,17 +459,6 @@ async function loginAdmin() {
   }
 }
 
-function showAdminError(msg) {
-  const el = $("admin-login-error");
-  if (!msg) {
-    setHidden(el, true);
-    el.textContent = "";
-    return;
-  }
-  el.textContent = msg;
-  setHidden(el, false);
-}
-
 function logoutAdmin() {
   sessionStorage.removeItem(STORAGE_KEY_ADMIN);
   setAdminUI(false);
@@ -572,7 +471,7 @@ function logoutAdmin() {
 function onEditKeyDown(e, inputEl) {
   if (e.key === "Enter") {
     e.preventDefault();
-    inputEl.blur(); // triggers onchange
+    inputEl.blur();
   }
 }
 
@@ -593,7 +492,7 @@ async function saveEditFromInput(inputEl) {
     inputEl.disabled = true;
     await apiUpdate(sheetName, row0, col0, value, pass);
 
-    // update cachedData locally (best-effort)
+    // update cachedData locally
     if (sheetName === "Summary") {
       if (cachedData?.summary?.[row0]) cachedData.summary[row0][col0] = value;
     } else {
@@ -610,16 +509,46 @@ async function saveEditFromInput(inputEl) {
 }
 
 /* -------------------------
+   Pull-to-refresh (simple)
+-------------------------- */
+(function enablePullToRefresh(){
+  let startY = 0;
+  let pulling = false;
+
+  window.addEventListener("touchstart", (e) => {
+    if (window.scrollY === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!pulling) return;
+    const y = e.touches[0].clientY;
+    const diff = y - startY;
+    const pullText = $("pullText");
+    if (diff > 20 && pullText) pullText.textContent = diff > 90 ? "Release to refresh" : "Pull down to refresh";
+  }, { passive: true });
+
+  window.addEventListener("touchend", async (e) => {
+    if (!pulling) return;
+    pulling = false;
+    const endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : startY;
+    const diff = endY - startY;
+    if (diff > 90) {
+      await loadData(true);
+    }
+    const pullText = $("pullText");
+    if (pullText) pullText.textContent = "Pull down to refresh";
+  }, { passive: true });
+})();
+
+/* -------------------------
    Boot
 -------------------------- */
 (function boot() {
   const pass = sessionStorage.getItem(STORAGE_KEY_ADMIN);
   setAdminUI(!!pass);
-
-  // re-render on rotate/resize (mobile <-> desktop)
-  window.addEventListener("resize", () => {
-    if (cachedData && currentTab === "daily") renderDaily();
-  });
 
   window.onload = () => loadData(true);
 })();
