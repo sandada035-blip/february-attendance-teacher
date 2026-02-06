@@ -11,22 +11,16 @@
 </head>
 
 <body>
-  <!-- ✅ Desktop/PC block screen -->
+  <!-- Desktop blocker -->
   <div class="desktop-block" id="desktopBlock">
     <div class="desktop-card">
       <img src="logo.png" alt="Logo" class="desktop-logo" onerror="this.style.display='none'">
       <h2>Mobile Only</h2>
       <p>សូមបើកតាមទូរសព្ទដៃ (Mobile) ដើម្បីមើល Dashboard នេះ។</p>
-      <div class="tips">
-        <div class="tip"><i class="fa-solid fa-mobile-screen"></i> iPhone / Android</div>
-        <div class="tip"><i class="fa-solid fa-wifi"></i> Browser: Chrome/Safari</div>
-      </div>
     </div>
   </div>
 
-  <!-- ✅ Mobile App -->
   <div class="app" id="app">
-    <!-- Top App Bar (Facebook style) -->
     <header class="appbar">
       <div class="appbar-left">
         <div class="app-avatar">
@@ -39,16 +33,21 @@
       </div>
 
       <div class="appbar-right">
+        <!-- ✅ Print Summary -->
+        <button class="icon-pill" onclick="printSummaryA4()" aria-label="Print Summary">
+          <i class="fa-solid fa-print"></i>
+        </button>
+
         <button class="icon-pill" onclick="openAdminLogin()" aria-label="Admin">
           <i class="fa-solid fa-user-shield"></i>
         </button>
+
         <button class="icon-pill" onclick="loadData(true)" aria-label="Refresh">
           <i class="fa-solid fa-rotate"></i>
         </button>
       </div>
     </header>
 
-    <!-- Sticky controls (search + day select) -->
     <div class="controls">
       <div class="searchbox">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -62,22 +61,18 @@
       </div>
     </div>
 
-    <!-- Pull-to-refresh hint -->
     <div class="pull-hint" id="pullHint">
       <div class="ph-dot"></div>
       <div class="ph-text" id="pullText">Pull down to refresh</div>
     </div>
 
-    <!-- Main Feed -->
     <main class="feed" id="main-view"></main>
 
-    <!-- Loader -->
     <div class="loader-bar hidden" id="loader">
       <div class="loader-spin"></div>
       <span>កំពុងទាញទិន្នន័យ...</span>
     </div>
 
-    <!-- Error -->
     <div class="error hidden" id="error-panel">
       <div class="error-left">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -89,7 +84,6 @@
       <button class="btn" onclick="loadData(true)"><i class="fa-solid fa-rotate-right"></i> Retry</button>
     </div>
 
-    <!-- Empty -->
     <div class="empty hidden" id="empty-state">
       <i class="fa-solid fa-inbox"></i>
       <h3>មិនមានទិន្នន័យ</h3>
@@ -97,23 +91,18 @@
       <button class="btn primary" onclick="loadData(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
     </div>
 
-    <!-- Bottom Tabs (FB style) -->
     <nav class="tabs">
       <button class="tab active" data-tab="daily" onclick="showTab('daily')">
-        <i class="fa-solid fa-calendar-day"></i>
-        <span>Daily</span>
+        <i class="fa-solid fa-calendar-day"></i><span>Daily</span>
       </button>
       <button class="tab" data-tab="summary" onclick="showTab('summary')">
-        <i class="fa-solid fa-chart-simple"></i>
-        <span>Summary</span>
+        <i class="fa-solid fa-chart-simple"></i><span>Summary</span>
       </button>
       <button class="tab" onclick="scrollToTop()">
-        <i class="fa-solid fa-arrow-up"></i>
-        <span>Top</span>
+        <i class="fa-solid fa-arrow-up"></i><span>Top</span>
       </button>
     </nav>
 
-    <!-- Admin Modal -->
     <div class="modal hidden" id="admin-modal" role="dialog" aria-modal="true">
       <div class="backdrop" onclick="closeAdminLogin()"></div>
       <div class="modal-card">
@@ -143,7 +132,6 @@
       </div>
     </div>
 
-    <!-- Toast -->
     <div class="toast hidden" id="toast">
       <i class="fa-solid fa-circle-check"></i>
       <span id="toast-text">Done</span>
@@ -151,10 +139,9 @@
   </div>
 
   <script>
-    // ✅ Mobile-only gate (simple)
     function isMobileUA() {
       const w = Math.min(window.innerWidth, window.innerHeight);
-      return w <= 900; // allow tablets/phones
+      return w <= 900;
     }
     const desktopBlock = document.getElementById("desktopBlock");
     const app = document.getElementById("app");
